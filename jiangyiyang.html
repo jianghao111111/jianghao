@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>江亦阳 - 传奇人物志</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* ===== RESET & BASE ===== */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #fff8dc;
+            color: #333;
+            font-family: 'Noto Sans SC', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* ===== CONFETTI ===== */
+        .confetti-piece {
+            position: fixed;
+            top: -20px;
+            width: 12px; height: 12px;
+            z-index: 1;
+            animation: confetti-fall linear forwards;
+            pointer-events: none;
+        }
+        @keyframes confetti-fall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ffd93d, #6bcb77, #4d96ff, #ff6b6b);
+            background-size: 400% 400%;
+            animation: rainbow-bg 6s ease infinite;
+            padding: 60px 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        @keyframes rainbow-bg {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .header::before {
+            content: '⭐';
+            position: absolute;
+            font-size: 30px;
+            top: 20px; left: 10%;
+            animation: spin-star 2s linear infinite;
+        }
+        .header::after {
+            content: '✨';
+            position: absolute;
+            font-size: 30px;
+            bottom: 20px; right: 10%;
+            animation: spin-star 2.5s linear infinite reverse;
+        }
+        @keyframes spin-star {
+            to { transform: rotate(360deg); }
+        }
+
+        .name-badge {
+            display: inline-block;
+            background: #fff;
+            padding: 10px 30px;
+            border-radius: 50px;
+            font-size: 14px;
+            color: #ff6b6b;
+            margin-bottom: 20px;
+            animation: badge-bounce 1s ease infinite;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        @keyframes badge-bounce {
+            0%, 100% { transform: translateY(0) rotate(-2deg); }
+            50% { transform: translateY(-8px) rotate(2deg); }
+        }
+
+        .hero-name {
+            font-size: clamp(48px, 10vw, 96px);
+            font-weight: 900;
+            text-shadow: 3px 3px 0 #fff, -3px -3px 0 #fff, 3px -3px 0 #fff, -3px 3px 0 #fff;
+            letter-spacing: 8px;
+            animation: name-wobble 3s ease-in-out infinite;
+        }
+        @keyframes name-wobble {
+            0%, 100% { transform: rotate(-2deg) scale(1); }
+            25% { transform: rotate(2deg) scale(1.05); }
+            50% { transform: rotate(-1deg) scale(1); }
+            75% { transform: rotate(1deg) scale(1.02); }
+        }
+
+        .hero-subtitle {
+            font-size: clamp(16px, 3vw, 24px);
+            margin-top: 15px;
+            color: rgba(255,255,255,0.9);
+            font-weight: 300;
+        }
+        .hero-subtitle em {
+            font-style: normal;
+            background: rgba(0,0,0,0.15);
+            padding: 4px 12px;
+            border-radius: 8px;
+        }
+
+        /* ===== CONTENT ===== */
+        .content { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+
+        /* ===== INTRO CARD ===== */
+        .intro-card {
+            background: #fff;
+            border: 3px dashed #ffd93d;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 50px;
+            text-align: center;
+            position: relative;
+        }
+        .intro-card::after {
+            content: '🤡';
+            position: absolute;
+            top: -25px; right: 20px;
+            font-size: 50px;
+            animation: clown-dance 2s ease-in-out infinite;
+        }
+        @keyframes clown-dance {
+            0%, 100% { transform: rotate(-10deg) scale(1); }
+            50% { transform: rotate(10deg) scale(1.2); }
+        }
+        .intro-title {
+            font-size: 28px;
+            font-weight: 900;
+            color: #ff6b6b;
+            margin-bottom: 15px;
+        }
+        .intro-text {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #666;
+        }
+        .intro-text strong {
+            color: #ff6b6b;
+        }
+
+        /* ===== FLAWS SECTION ===== */
+        .section-label {
+            text-align: center;
+            font-size: clamp(28px, 5vw, 42px);
+            font-weight: 900;
+            margin-bottom: 40px;
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        .section-label::before { content: '👇 '; }
+        .section-label::after { content: ' 👇'; }
+
+        .flaw-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 35px 30px;
+            margin-bottom: 25px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+            cursor: pointer;
+        }
+        .flaw-card:hover {
+            transform: translateY(-5px) rotate(var(--rot, 1deg));
+            box-shadow: 0 15px 40px rgba(0,0,0,0.12);
+            border-color: var(--accent);
+        }
+
+        .flaw-card--hesitate { --accent: #ff6b6b; --rot: -1deg; }
+        .flaw-card--careless { --accent: #ffd93d; --rot: 1deg; }
+        .flaw-card--stubborn { --accent: #6bcb77; --rot: -0.5deg; }
+        .flaw-card--vain { --accent: #4d96ff; --rot: 0.8deg; }
+        .flaw-card--lazy { --accent: #ff9f43; --rot: -1.2deg; }
+
+        .flaw-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .flaw-emoji {
+            font-size: 48px;
+            animation: emoji-bounce 2s ease-in-out infinite;
+        }
+        @keyframes emoji-bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15) rotate(10deg); }
+        }
+        .flaw-name {
+            font-size: 22px;
+            font-weight: 900;
+            color: var(--accent);
+        }
+        .flaw-name-sub {
+            font-size: 13px;
+            color: #999;
+            margin-top: 2px;
+        }
+        .flaw-desc {
+            font-size: 15px;
+            line-height: 1.8;
+            color: #555;
+            padding-left: 63px;
+        }
+        .flaw-desc .joke {
+            display: block;
+            margin-top: 10px;
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 3px solid var(--accent);
+            font-style: italic;
+            color: #888;
+            font-size: 13px;
+        }
+
+        /* ===== METER BARS ===== */
+        .meter-container {
+            margin-top: 15px;
+            padding-left: 63px;
+        }
+        .meter-label {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 5px;
+        }
+        .meter-bar {
+            height: 14px;
+            background: #eee;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        .meter-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 10px;
+            width: 0;
+            transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        .meter-fill.animate { width: var(--val); }
+        .meter-fill::after {
+            content: '';
+            position: absolute;
+            right: 0; top: 0;
+            width: 20px; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4));
+        }
+        .meter-value {
+            position: absolute;
+            right: 8px; top: 50%;
+            transform: translateY(-50%);
+            font-size: 10px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        /* ===== QUOTE SECTION ===== */
+        .quote-section {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 20px;
+            padding: 40px 30px;
+            margin: 50px 0;
+            text-align: center;
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+        .quote-section::before {
+            content: '"';
+            position: absolute;
+            top: -10px; left: 20px;
+            font-size: 120px;
+            opacity: 0.15;
+            font-family: Georgia, serif;
+        }
+        .quote-text {
+            font-size: clamp(18px, 3vw, 24px);
+            font-weight: 700;
+            line-height: 1.6;
+            position: relative;
+            z-index: 1;
+        }
+        .quote-author {
+            margin-top: 15px;
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        /* ===== ACHIEVEMENTS ===== */
+        .achievement-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 40px 0;
+        }
+        .achievement-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 25px 20px;
+            text-align: center;
+            border: 2px solid #eee;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .achievement-card:hover {
+            border-color: #ffd93d;
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        }
+        .achievement-icon { font-size: 40px; margin-bottom: 10px; }
+        .achievement-name { font-size: 14px; font-weight: 700; color: #333; }
+        .achievement-desc { font-size: 12px; color: #999; margin-top: 5px; }
+        .achievement-card .new-badge {
+            position: absolute;
+            top: -8px; right: -8px;
+            background: #ff6b6b;
+            color: #fff;
+            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-weight: 700;
+        }
+
+        /* ===== HAER BADGE ===== */
+        .haer-badge {
+            text-align: center;
+            margin: 50px 0;
+        }
+        .haer-stamp {
+            display: inline-block;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: #fff;
+            font-size: clamp(36px, 8vw, 72px);
+            font-weight: 900;
+            padding: 20px 50px;
+            border-radius: 20px;
+            transform: rotate(-5deg);
+            animation: stamp-pulse 2s ease-in-out infinite;
+            box-shadow: 0 10px 40px rgba(238, 90, 36, 0.3);
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+            position: relative;
+        }
+        .haer-stamp::before {
+            content: '🤪';
+            position: absolute;
+            top: -30px; right: -20px;
+            font-size: 40px;
+            animation: clown-dance 1.5s ease-in-out infinite;
+        }
+        @keyframes stamp-pulse {
+            0%, 100% { transform: rotate(-5deg) scale(1); }
+            50% { transform: rotate(-3deg) scale(1.05); }
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            background: #333;
+            color: #fff;
+            margin-top: 50px;
+        }
+        .footer p {
+            font-size: 14px;
+            opacity: 0.6;
+        }
+        .footer .disclaimer {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #ffd93d;
+        }
+
+        /* ===== FLOATING EMOJIS ===== */
+        .floating-emoji {
+            position: fixed;
+            font-size: 24px;
+            pointer-events: none;
+            z-index: 999;
+            animation: float-up 3s ease-out forwards;
+        }
+        @keyframes float-up {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-200px) scale(0.5); }
+        }
+
+        /* ===== SCROLL REVEAL ===== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 600px) {
+            .flaw-desc, .meter-container { padding-left: 0; }
+            .flaw-header { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="header">
+        <div class="name-badge">🌟 本站收录人物 · 第 001 号 🌟</div>
+        <h1 class="hero-name">江 亦 阳</h1>
+        <p class="hero-subtitle">一个<em>集才华与搞笑于一身</em>的传奇男人</p>
+    </header>
+
+    <div class="content">
+        <!-- INTRO -->
+        <div class="intro-card reveal">
+            <h2 class="intro-title">📜 人物简介</h2>
+            <p class="intro-text">
+                <strong>江亦阳</strong>，男，一个让你又爱又恨的神奇存在。<br>
+                他优柔寡断到选个外卖能纠结半小时，粗心大意到出门忘记带手机，固执己见到十头牛都拉不回来，虚荣心重到朋友圈必须九宫格精修，拖沓懒散到"明天再说"是他的口头禅。<br><br>
+                但他依然乐观地活着——这本身就是一个<strong>奇迹</strong>。
+            </p>
+        </div>
+
+        <!-- FLAWS -->
+        <h2 class="section-label">五大经典特质</h2>
+
+        <div class="flaw-card flaw-card--hesitate reveal">
+            <div class="flaw-header">
+                <span class="flaw-emoji">🤔</span>
+                <div>
+                    <div class="flaw-name">优柔寡断</div>
+                    <div class="flaw-name-sub">"让我再想想……"</div>
+                </div>
+            </div>
+            <div class="flaw-desc">
+                遇事犹豫，难下决断。从"中午吃什么"到"要不要回这条消息"，每一个选择对他来说都是一场灵魂拷问。
+                <span class="joke">💬 经典场景：点外卖花了40分钟，最后发现店铺关门了。</span>
+            </div>
+            <div class="meter-container">
+                <div class="meter-label">犹豫指数</div>
+                <div class="meter-bar">
+                    <div class="meter-fill" style="--val: 95%;"><span class="meter-value">95%</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flaw-card flaw-card--careless reveal">
+            <div class="flaw-header">
+                <span class="flaw-emoji">😅</span>
+                <div>
+                    <div class="flaw-name">粗心大意</div>
+                    <div class="flaw-name-sub">"啊？我忘了？"</div>
+                </div>
+            </div>
+            <div class="flaw-desc">
+                做事马虎，容易疏漏。出门不带钥匙是常态，发朋友圈忘了屏蔽前任是常规操作，考试忘带笔……那都是基操。
+                <span class="joke">💬 经典名言："我不是忘了，我只是选择性记忆。"</span>
+            </div>
+            <div class="meter-container">
+                <div class="meter-label">马虎程度</div>
+                <div class="meter-bar">
+                    <div class="meter-fill" style="--val: 88%;"><span class="meter-value">88%</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flaw-card flaw-card--stubborn reveal">
+            <div class="flaw-header">
+                <span class="flaw-emoji">🐂</span>
+                <div>
+                    <div class="flaw-name">固执己见</div>
+                    <div class="flaw-name-sub">"不不不，我觉得……"</div>
+                </div>
+            </div>
+            <div class="flaw-desc">
+                听不进旁人合理建议。哪怕全世界都告诉他前面是悬崖，他也要先自己走到边上看看——然后再犹豫要不要跳。
+                <span class="joke">💬 朋友："那边有坑。" 他："我觉得那个坑可能不是你想的那样。"（然后掉进去了）</span>
+            </div>
+            <div class="meter-container">
+                <div class="meter-label">顽固等级</div>
+                <div class="meter-bar">
+                    <div class="meter-fill" style="--val: 92%;"><span class="meter-value">92%</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flaw-card flaw-card--vain reveal">
+            <div class="flaw-header">
+                <span class="flaw-emoji">💅</span>
+                <div>
+                    <div class="flaw-name">虚荣心重</div>
+                    <div class="flaw-name-sub">"你觉得我这张帅吗？"</div>
+                </div>
+            </div>
+            <div class="flaw-desc">
+                过分在意他人眼光与排场。拍照必须找好角度、调好滤镜、配上恰到好处的文案，然后每隔三分钟刷新一次看点赞。
+                <span class="joke">💬 朋友圈发了九张图，配文"随便拍拍"，实际上拍了127张才选出这9张。</span>
+            </div>
+            <div class="meter-container">
+                <div class="meter-label">虚荣指数</div>
+                <div class="meter-bar">
+                    <div class="meter-fill" style="--val: 85%;"><span class="meter-value">85%</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flaw-card flaw-card--lazy reveal">
+            <div class="flaw-header">
+                <span class="flaw-emoji">🦥</span>
+                <div>
+                    <div class="flaw-name">拖沓懒散</div>
+                    <div class="flaw-name-sub">"明天……再说吧"</div>
+                </div>
+            </div>
+            <div class="flaw-desc">
+                做事拖延、缺乏自律。DDL（deadline）是第一生产力，但即使到了DDL，他也能再拖一会儿——毕竟"最后一刻"也是可以再推后的。
+                <span class="joke">💬 计划表："今日待办 10 项" → 实际完成："打开计划表" ✅</span>
+            </div>
+            <div class="meter-container">
+                <div class="meter-label">拖延等级</div>
+                <div class="meter-bar">
+                    <div class="meter-fill" style="--val: 99%;"><span class="meter-value">99%</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUOTE -->
+        <div class="quote-section reveal">
+            <p class="quote-text">"我不是拖延，我只是在等待最佳的时机。"——江亦阳，永远在等待的那个人</p>
+            <p class="quote-author">—— 最佳时机至今未到</p>
+        </div>
+
+        <!-- ACHIEVEMENTS -->
+        <h2 class="section-label">隐藏成就</h2>
+        <div class="achievement-grid">
+            <div class="achievement-card reveal">
+                <div class="achievement-icon">🏆</div>
+                <div class="achievement-name">外卖选择困难症</div>
+                <div class="achievement-desc">连续30天没点成外卖</div>
+            </div>
+            <div class="achievement-card reveal">
+                <div class="achievement-icon">🔑</div>
+                <div class="achievement-name">锁门大师</div>
+                <div class="achievement-desc">一年忘带钥匙365次</div>
+                <span class="new-badge">NEW</span>
+            </div>
+            <div class="achievement-card reveal">
+                <div class="achievement-icon">📱</div>
+                <div class="achievement-name">P图十级学者</div>
+                <div class="achievement-desc">一张照片修3小时</div>
+            </div>
+            <div class="achievement-card reveal">
+                <div class="achievement-icon">🛋️</div>
+                <div class="achievement-name">沙发长出来了</div>
+                <div class="achievement-desc">和沙发融为一体</div>
+                <span class="new-badge">传说</span>
+            </div>
+        </div>
+
+        <!-- HAER BADGE -->
+        <div class="haer-badge reveal">
+            <div class="haer-stamp">哈 儿</div>
+            <p style="margin-top: 20px; color: #999; font-size: 14px;">—— 官方认证，童叟无欺 ——</p>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <p>本站内容由热心群众提供，如有雷同，那说明他确实是这样的人</p>
+        <p class="disclaimer">⚠️ 免责声明：本网站仅供娱乐，如有冒犯……那也是故意的 😏</p>
+    </footer>
+
+    <script>
+        /* ===== CONFETTI ===== */
+        const confettiColors = ['#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#ff9f43', '#ee5a24', '#a29bfe'];
+        function createConfetti() {
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const piece = document.createElement('div');
+                    piece.className = 'confetti-piece';
+                    piece.style.left = Math.random() * 100 + 'vw';
+                    piece.style.background = confettiColors[Math.floor(Math.random() * confettiColors.length)];
+                    piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+                    piece.style.width = (Math.random() * 10 + 6) + 'px';
+                    piece.style.height = (Math.random() * 10 + 6) + 'px';
+                    piece.style.animationDuration = (Math.random() * 3 + 3) + 's';
+                    document.body.appendChild(piece);
+                    setTimeout(() => piece.remove(), 6000);
+                }, i * 100);
+            }
+        }
+        createConfetti();
+
+        /* ===== SCROLL REVEAL + METER ANIMATION ===== */
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(e => {
+                if (e.isIntersecting) {
+                    e.target.classList.add('visible');
+                    // Animate meter bars
+                    e.target.querySelectorAll('.meter-fill').forEach(bar => {
+                        setTimeout(() => bar.classList.add('animate'), 300);
+                    });
+                }
+            });
+        }, { threshold: 0.2 });
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        /* ===== CLICK TO SPAWN EMOJIS ===== */
+        const emojis = ['😂', '🤣', '😅', '🤪', '💀', '😭', '🤦', '😤', '🙃', '💩'];
+        document.addEventListener('click', e => {
+            const emoji = document.createElement('div');
+            emoji.className = 'floating-emoji';
+            emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+            emoji.style.left = e.clientX + 'px';
+            emoji.style.top = e.clientY + 'px';
+            document.body.appendChild(emoji);
+            setTimeout(() => emoji.remove(), 3000);
+        });
+
+        /* ===== FLAW CARD CLICK EFFECT ===== */
+        document.querySelectorAll('.flaw-card').forEach(card => {
+            card.addEventListener('click', () => {
+                card.style.transform = 'scale(0.95)';
+                setTimeout(() => { card.style.transform = ''; }, 150);
+            });
+        });
+    </script>
+</body>
+</html>
