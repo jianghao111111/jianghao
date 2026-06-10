@@ -72,6 +72,8 @@ canvas{display:block}
       <div class="hud-level" id="hud-level">Lv.1</div>
       <div class="hud-stat" id="hud-kills">击杀: 0</div>
       <div class="hud-stat" id="hud-weapons">武器: -</div>
+      <div class="hud-stat" id="hud-ultimate" style="color:#f1c40f">大招: 0/50</div>
+      <div class="hud-stat" id="hud-berserk" style="color:#e74c3c;display:none">狂暴: 0s</div>
     </div>
   </div>
 </div>
@@ -80,8 +82,8 @@ canvas{display:block}
   <h1>生存幸存者</h1>
   <div class="subtitle">活下来，击败一切</div>
   <div class="controls">
-    <kbd>W A S D</kbd> 或 <kbd>方向键</kbd> 移动<br>
-    武器自动攻击 · 收集经验升级
+    <kbd>W A S D</kbd> 或 <kbd>方向键</kbd> 移动 &nbsp;|&nbsp; <kbd>空格</kbd> 释放大招<br>
+    武器自动攻击 · 收集经验升级 · 击杀充能大招
   </div>
   <button class="start-btn" onclick="startGame()">开 始 游 戏</button>
 </div>
@@ -145,12 +147,12 @@ const WEAPONS_DB = [
     getStats:(lv)=>({dmg:8+lv*2,spd:0,range:60+lv*10,cd:0.05,count:2+Math.floor(lv/2),pierce:999,spread:0,orbit:true})},
   { id:'lightning', name:'雷击', icon:'⚡', desc:'随机劈落闪电', color:'#f1c40f',
     getStats:(lv)=>({dmg:15+lv*4,spd:0,range:250,cd:1.2-lv*0.08,count:1+Math.floor(lv/3),pierce:1,spread:0,aoe:40+lv*5})},
-  { id:'ice_shard', name:'冰锥', icon:'️', desc:'扇形发射冰锥，减速敌人', color:'#74b9ff',
+  { id:'ice_shard', name:'冰锥', icon:'', desc:'扇形发射冰锥，减速敌人', color:'#74b9ff',
     getStats:(lv)=>({dmg:7+lv*2,spd:7,range:250,cd:0.8-lv*0.05,count:3+Math.floor(lv/2),pierce:1,spread:0.4,slow:0.3+lv*0.05})},
   { id:'holy_cross', name:'圣十字', icon:'✝️', desc:'向前方发射十字光弹', color:'#ffeaa7',
     getStats:(lv)=>({dmg:12+lv*3,spd:5,range:350,cd:1-lv*0.06,count:1+Math.floor(lv/4),pierce:2+Math.floor(lv/3),spread:0.08})},
-  { id:'poison_gas', name:'毒雾', icon:'🟢', desc:'持续释放毒雾区域', color:'#00b894',
-    getStats:(lv)=>({dmg:3+lv,spd:0,range:100+lv*15,cd:0.04,count:1,pierce:999,spread:0,aoe:80+lv*10,ground:true})},
+  { id:'poison_gas', name:'毒雾', icon:'', desc:'持续释放剧毒区域，高可视度', color:'#00b894',
+    getStats:(lv)=>({dmg:4+lv*2,spd:0,range:120+lv*20,cd:0.03,count:1,pierce:999,spread:0,aoe:100+lv*15,ground:true,visible:true})},
 ];
 
 // ============================================================
@@ -183,7 +185,19 @@ function createPlayer(){
     invincible:0,
     size:16,
     vx:0, vy:0,
-    trail:[]
+    trail:[],
+    // 防反系统
+    berserkActive:false,
+    berserkTimer:0,
+    berserkDmgMult:1,
+    berserkCooldown:0,
+    // 大招系统
+    ultimateKills:0,
+    ultimateReady:false,
+    ultimateCharge:0,
+    ultimateMaxCharge:50,
+    // 大招动画
+    ultimateAnim:null
   };
 }
 
@@ -202,7 +216,12 @@ const ENEMY_TYPES = {
 //  INPUT
 // ============================================================
 const keys = {};
-window.addEventListener('keydown', e=>{ keys[e.key.toLowerCase()]=true; if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(e.key.toLowerCase()))e.preventDefault(); });
+window.addEventListener('keydown', e=>{ keys[e.key.toLowerCase()]=true; if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(e.key.toLowerCase()))e.preventDefault();
+  // Ultimate activation on Space
+  if(e.key===' ' && G.running && !G.paused && G.player.ultimateReady){
+    activateUltimate();
+  }
+});
 window.addEventListener('keyup', e=>{ keys[e.key.toLowerCase()]=false; });
 
 // ============================================================
@@ -420,6 +439,46 @@ function update(dt){
   // Difficulty scaling
   G.difficulty = 1 + G.time/120*0.5;
 
+  // Enemy time-based reinforcement (强化)
+  G.enemies.forEach(e=>{
+    if(e.hp<=0 || e.boss) return;
+    if(!e.enhanced) e.enhanced=false;
+    if(!e.enhanced && G.time > 60 && Math.random() < dt*0.05){
+      e.enhanced = true;
+      e.hp = e.maxHp * 1.3;
+      e.maxHp *= 1.3;
+      e.speed *= 1.15;
+      e.dmg *= 1.2;
+      e.color = e.type==='fast'?'#ff6348':e.type==='tank'?'#a855f7':e.type==='shooter'?'#34d399':'#ff6b6b';
+      e.size += 3;
+      e.enhanced = true;
+      spawnParticle(e.x, e.y, '#f1c40f', 8);
+      spawnDamageNumber(e.x, e.y-e.size, '强化!', '#f1c40f');
+    }
+  });
+
+  // Berserk trigger: when HP < 30%, short buff
+  if(p.hp/p.maxHp < 0.3 && !p.berserkActive && p.berserkCooldown<=0){
+    p.berserkActive = true;
+    p.berserkTimer = 8; // 8秒
+    p.berserkDmgMult = 2.5; // 2.5倍伤害
+    spawnParticle(p.x, p.y, '#e74c3c', 15);
+  }
+  if(p.berserkActive){
+    p.berserkTimer -= dt;
+    if(p.berserkTimer <= 0){
+      p.berserkActive = false;
+      p.berserkCooldown = 30; // 30秒冷却
+    }
+  }
+  if(p.berserkCooldown > 0) p.berserkCooldown -= dt;
+
+  // Ultimate charge: 1 kill = 1 charge, 50 charges = ready
+  p.ultimateCharge = Math.min(p.ultimateMaxCharge, p.ultimateKills);
+  if(p.ultimateCharge >= p.ultimateMaxCharge && !p.ultimateReady){
+    p.ultimateReady = true;
+  }
+
   // Weapon cooldowns & fire
   G.weapons.forEach(w=>{
     w.cooldown -= dt;
@@ -571,14 +630,103 @@ function update(dt){
   });
   G.damageNumbers=G.damageNumbers.filter(dn=>dn.life>0);
 
+  // Ultimate animation
+  updateUltimate(dt);
+
   // Dead enemy drops
   // (handled in dealDamage when hp<=0)
 
   updateHUD();
 }
 
+function activateUltimate(){
+  const p = G.player;
+  if(!p.ultimateReady) return;
+  p.ultimateReady = false;
+  p.ultimateCharge = 0;
+  p.ultimateKills = 0;
+
+  // Launch from sky - animation state
+  p.ultimateAnim = {
+    phase:'ascend',    // ascend -> descend -> impact -> done
+    timer:0,
+    targetX:p.x,
+    targetY:p.y,
+    height:500,
+    impactTimer:0
+  };
+
+  // Screen shake effect
+  spawnParticle(p.x, p.y, '#fff', 30);
+}
+
+function updateUltimate(dt){
+  const p = G.player;
+  if(!p.ultimateAnim) return;
+  const ua = p.ultimateAnim;
+  ua.timer += dt;
+
+  if(ua.phase === 'ascend'){
+    // Rise up quickly
+    if(ua.timer > 0.6){
+      ua.phase = 'descend';
+      ua.timer = 0;
+      // Warning indicator on ground
+    }
+  } else if(ua.phase === 'descend'){
+    if(ua.timer > 0.8){
+      ua.phase = 'impact';
+      ua.timer = 0;
+      // Impact: damage ALL enemies on screen
+      const impactRadius = 400;
+      G.enemies.forEach(e=>{
+        if(e.hp<=0) return;
+        const d = dist(e.x, e.y, ua.targetX, ua.targetY);
+        if(d < impactRadius){
+          const dmg = 100 + G.level * 10;
+          e.hp -= dmg;
+          spawnDamageNumber(e.x, e.y-e.size, Math.ceil(dmg), '#fff', true);
+          spawnParticle(e.x, e.y, '#fff', 5);
+          if(e.hp <= 0){
+            G.kills++;
+            for(let i=0;i<3;i++){
+              const a=Math.random()*Math.PI*2;
+              G.pickups.push({
+                x:e.x+Math.cos(a)*Math.random()*20,
+                y:e.y+Math.sin(a)*Math.random()*20,
+                type:'xp', value:Math.ceil(e.xp/3), color:'#74b9ff', size:5
+              });
+            }
+            for(let i=0;i<8;i++) spawnParticle(e.x, e.y, e.color, 4);
+          }
+        }
+      });
+      G.enemies = G.enemies.filter(e=>e.hp>0);
+      // Big impact particles
+      for(let i=0;i<50;i++){
+        spawnParticle(ua.targetX, ua.targetY, Math.random()>0.5?'#fff':'#f1c40f', 3);
+      }
+      // Shockwave ring
+      G.particles.push({
+        x:ua.targetX, y:ua.targetY, vx:0, vy:0,
+        life:1.5, maxLife:1.5, a:1,
+        color:'#fff', size:impactRadius, shockwave:true
+      });
+    }
+  } else if(ua.phase === 'impact'){
+    if(ua.timer > 1.5){
+      ua.phase = 'done';
+      p.ultimateAnim = null;
+      // Invincible briefly after landing
+      p.invincible = 1;
+    }
+  }
+}
+
 function dealDamage(enemy, dmg, color, slow){
   let finalDmg = dmg;
+  // Berserk multiplier
+  if(G.player.berserkActive) finalDmg *= G.player.berserkDmgMult;
   // Crit
   if(Math.random()<G.player.critChance){
     finalDmg *= 2;
@@ -779,7 +927,16 @@ function render(){
       ctx.fillStyle=e.color;
     }
     ctx.shadowColor=e.color;
-    ctx.shadowBlur=e.boss?20:8;
+    ctx.shadowBlur=e.boss?20:(e.enhanced?15:8);
+
+    // Enhanced glow ring
+    if(e.enhanced){
+      ctx.beginPath();
+      ctx.arc(e.x, e.y, e.size+6, 0, Math.PI*2);
+      ctx.strokeStyle='rgba(241,196,15,0.4)';
+      ctx.lineWidth=2;
+      ctx.stroke();
+    }
 
     if(e.boss){
       // Boss: draw as diamond
@@ -810,53 +967,166 @@ function render(){
     ctx.restore();
   });
 
+  // Ultimate animation rendering
+  if(p.ultimateAnim){
+    const ua = p.ultimateAnim;
+    const t = ua.timer;
+    if(ua.phase === 'ascend'){
+      // Player shrinks and moves up (visually shown as shadow below)
+      const progress = t / 0.6;
+      // Ground warning circle
+      ctx.beginPath();
+      ctx.arc(ua.targetX, ua.targetY, 400, 0, Math.PI*2);
+      ctx.fillStyle='rgba(255,0,0,0.1)';
+      ctx.fill();
+      ctx.strokeStyle='rgba(255,0,0,0.5)';
+      ctx.lineWidth=2;
+      ctx.stroke();
+      // Warning text
+      ctx.font='bold 24px Arial';
+      ctx.fillStyle='rgba(255,100,100,0.8)';
+      ctx.textAlign='center';
+      ctx.fillText('⚠ DANGER ⚠', ua.targetX, ua.targetY-10);
+    } else if(ua.phase === 'descend'){
+      // Shadow grows, then impact
+      const progress = t / 0.8;
+      const shadowSize = 400 * progress;
+      ctx.beginPath();
+      ctx.arc(ua.targetX, ua.targetY, shadowSize, 0, Math.PI*2);
+      ctx.fillStyle=`rgba(255,0,0,${0.15*progress})`;
+      ctx.fill();
+      ctx.strokeStyle=`rgba(255,100,100,${0.5*progress})`;
+      ctx.lineWidth=3;
+      ctx.stroke();
+    } else if(ua.phase === 'impact'){
+      // Flash
+      const flash = Math.max(0, 1 - ua.timer/0.3);
+      ctx.fillStyle=`rgba(255,255,255,${flash*0.5})`;
+      ctx.fillRect(G.camera.x, G.camera.y, canvas.width, canvas.height);
+    }
+  }
+
   // Player
   ctx.save();
-  if(p.invincible>0 && Math.floor(p.invincible*10)%2===0){
-    ctx.globalAlpha=0.5;
-  }
-  // Glow
-  ctx.shadowColor='#3498db';
-  ctx.shadowBlur=15;
-  ctx.fillStyle='#3498db';
-  ctx.beginPath();
-  ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
-  ctx.fill();
-  ctx.shadowBlur=0;
-  // Inner
-  ctx.fillStyle='#fff';
-  ctx.beginPath();
-  ctx.arc(p.x, p.y, p.size*0.5, 0, Math.PI*2);
-  ctx.fill();
-  // Orbit weapons visual
-  G.weapons.forEach(w=>{
-    if(w.getStats(w.level).orbit){
-      const stats=w.getStats(w.level);
-      const count=stats.count;
-      const now=performance.now()/1000;
-      for(let i=0;i<count;i++){
-        const angle=(Math.PI*2/count)*i+now*2;
-        const ox=p.x+Math.cos(angle)*stats.range;
-        const oy=p.y+Math.sin(angle)*stats.range;
-        ctx.beginPath();
-        ctx.arc(ox,oy,6,0,Math.PI*2);
-        ctx.fillStyle=w.color;
-        ctx.shadowColor=w.color;
-        ctx.shadowBlur=10;
-        ctx.fill();
-        ctx.shadowBlur=0;
-      }
+  if(p.ultimateAnim && p.ultimateAnim.phase !== 'done'){
+    // During ultimate: player is invisible (flying up)
+  } else {
+    if(p.invincible>0 && Math.floor(p.invincible*10)%2===0){
+      ctx.globalAlpha=0.5;
     }
-  });
+    // Berserk aura
+    if(p.berserkActive){
+      const pulse = Math.sin(performance.now()/200)*0.3+0.7;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size+12, 0, Math.PI*2);
+      ctx.fillStyle=`rgba(231,76,60,${pulse*0.3})`;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size+8, 0, Math.PI*2);
+      ctx.strokeStyle=`rgba(255,100,100,${pulse})`;
+      ctx.lineWidth=2;
+      ctx.stroke();
+    }
+    // Ultimate ready glow
+    if(p.ultimateReady){
+      const pulse = Math.sin(performance.now()/150)*0.4+0.6;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size+10, 0, Math.PI*2);
+      ctx.strokeStyle=`rgba(241,196,15,${pulse})`;
+      ctx.lineWidth=3;
+      ctx.stroke();
+    }
+    // Glow
+    ctx.shadowColor=p.berserkActive?'#e74c3c':'#3498db';
+    ctx.shadowBlur=15;
+    ctx.fillStyle=p.berserkActive?'#e74c3c':'#3498db';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur=0;
+    // Inner
+    ctx.fillStyle='#fff';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size*0.5, 0, Math.PI*2);
+    ctx.fill();
+    // Orbit weapons visual
+    G.weapons.forEach(w=>{
+      if(w.getStats(w.level).orbit){
+        const stats=w.getStats(w.level);
+        const count=stats.count;
+        const now=performance.now()/1000;
+        for(let i=0;i<count;i++){
+          const angle=(Math.PI*2/count)*i+now*2;
+          const ox=p.x+Math.cos(angle)*stats.range;
+          const oy=p.y+Math.sin(angle)*stats.range;
+          ctx.beginPath();
+          ctx.arc(ox,oy,6,0,Math.PI*2);
+          ctx.fillStyle=w.color;
+          ctx.shadowColor=w.color;
+          ctx.shadowBlur=10;
+          ctx.fill();
+          ctx.shadowBlur=0;
+        }
+      }
+    });
+  }
   ctx.restore();
 
   // Particles
   G.particles.forEach(pt=>{
     ctx.globalAlpha=pt.a;
-    ctx.fillStyle=pt.color;
-    ctx.fillRect(pt.x-pt.size/2, pt.y-pt.size/2, pt.size, pt.size);
+    if(pt.shockwave){
+      // Shockwave ring
+      const progress = 1 - pt.life/pt.maxLife;
+      const radius = pt.size * progress;
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, radius, 0, Math.PI*2);
+      ctx.strokeStyle=`rgba(255,255,255,${pt.a})`;
+      ctx.lineWidth=4*(1-progress);
+      ctx.stroke();
+    } else {
+      ctx.fillStyle=pt.color;
+      ctx.fillRect(pt.x-pt.size/2, pt.y-pt.size/2, pt.size, pt.size);
+    }
   });
   ctx.globalAlpha=1;
+
+  // Poison gas visual (enhanced visibility)
+  G.projectiles.forEach(proj=>{
+    if(!proj.ground) return;
+    const vis = Math.min(1, proj.life);
+    // Outer glow
+    ctx.beginPath();
+    ctx.arc(proj.x, proj.y, proj.size*1.5, 0, Math.PI*2);
+    ctx.fillStyle=`rgba(0,184,148,${0.08*vis})`;
+    ctx.fill();
+    // Middle ring
+    ctx.beginPath();
+    ctx.arc(proj.x, proj.y, proj.size, 0, Math.PI*2);
+    ctx.fillStyle=`rgba(0,184,148,${0.15*vis})`;
+    ctx.fill();
+    // Core
+    ctx.beginPath();
+    ctx.arc(proj.x, proj.y, proj.size*0.5, 0, Math.PI*2);
+    ctx.fillStyle=`rgba(0,230,180,${0.3*vis})`;
+    ctx.fill();
+    // Border
+    ctx.beginPath();
+    ctx.arc(proj.x, proj.y, proj.size, 0, Math.PI*2);
+    ctx.strokeStyle=`rgba(0,230,180,${0.4*vis})`;
+    ctx.lineWidth=2;
+    ctx.stroke();
+    // Toxic bubbles inside
+    const t = performance.now()/1000;
+    for(let i=0;i<3;i++){
+      const bx=proj.x+Math.cos(t*2+i*2.1)*proj.size*0.5;
+      const by=proj.y+Math.sin(t*2+i*2.1)*proj.size*0.5;
+      ctx.beginPath();
+      ctx.arc(bx, by, 4, 0, Math.PI*2);
+      ctx.fillStyle=`rgba(0,255,200,${0.5*vis})`;
+      ctx.fill();
+    }
+  });
 
   // Damage numbers
   G.damageNumbers.forEach(dn=>{
@@ -939,6 +1209,18 @@ function updateHUD(){
   document.getElementById('hud-level').textContent='Lv.'+G.level;
   document.getElementById('hud-kills').textContent='击杀: '+G.kills;
   document.getElementById('hud-weapons').textContent='武器: '+G.weapons.map(w=>w.icon).join(' ');
+  document.getElementById('hud-ultimate').textContent='大招: '+p.ultimateCharge+'/'+p.ultimateMaxCharge+(p.ultimateReady?' ✓':'');
+  document.getElementById('hud-ultimate').style.color=p.ultimateReady?'#2ecc71':'#f1c40f';
+  const berserkEl=document.getElementById('hud-berserk');
+  if(p.berserkActive){
+    berserkEl.style.display='block';
+    berserkEl.textContent='狂暴: '+Math.ceil(p.berserkTimer)+'s';
+  } else if(p.berserkCooldown>0){
+    berserkEl.style.display='block';
+    berserkEl.textContent='狂暴CD: '+Math.ceil(p.berserkCooldown)+'s';
+  } else {
+    berserkEl.style.display='none';
+  }
 }
 
 // ============================================================
