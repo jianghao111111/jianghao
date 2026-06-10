@@ -308,6 +308,18 @@ function fireW(w){
   for(let i=0;i<cnt;i++){const sp=(Math.random()-.5)*s.spread*2,ag=aa+sp+(cnt>1?(i/(cnt-1)-.5)*s.spread*2:0);
     G.proj.push({x:p.x,y:p.y,vx:Math.cos(ag)*s.spd,vy:Math.sin(ag)*s.spd,dmg:s.dmg,range:s.range,aoe:s.aoe||0,c:w.color,life:s.range/s.spd,pierce:s.pierce,slow:s.slow||0,wid:w.id,sz:5,hits:new Set})}
 }
+// orbit武器伤害检测（火焰环）
+function checkOrbitHit(){
+  const p=G.P;if(!p||p.hp<=0)return;const t=performance.now()/1000;
+  G.weaps.forEach(w=>{if(!w.stats(w.lv).orbit)return;
+    const s=w.stats(w.lv),n=s.count;
+    for(let i=0;i<n;i++){const a=6.28/n*i+t*2,ox=p.x+Math.cos(a)*s.range,oy=p.y+Math.sin(a)*s.range;
+      G.enemies.forEach(e=>{if(e.hp<=0)return;
+        if(dist(ox,oy,e.x,e.y)<e.sz+12){
+          const key=e.x+','+e.y;
+          if(!w._hitCD||!w._hitCD.has(key)){dealDmg(e,s.dmg,w.c,0);
+            if(!w._hitCD)w._hitCD=new Set();w._hitCD.add(key);
+            setTimeout(()=>w._hitCD&&w._hitCD.delete(key),300)}}})}})}
 
 // ============================================================
 //  大招 - 处刑
@@ -428,6 +440,7 @@ function update(dt){
 
   // 武器
   G.weaps.forEach(w=>{w.cd-=dt;if(w.cd<=0){w.cd=w.stats(w.lv).cd;fireW(w)}});
+  checkOrbitHit();
 
   // 投射物
   G.proj.forEach(pr=>{if(!pr.ground){pr.x+=pr.vx;pr.y+=pr.vy}pr.life-=dt});
