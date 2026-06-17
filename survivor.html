@@ -684,9 +684,8 @@ function update(dt){
 //  渲染
 // ============================================================
 function render(){
-  X.fillStyle='#0a0a12';X.fillRect(0,0,W,H);
+  drawBackground();
   X.save();X.translate(-G.cam.x,-G.cam.y);
-  drawGrid();
   const p=G.P;
 
   // 玩家轨迹
@@ -845,11 +844,194 @@ function render(){
   drawMinimap()
 }
 
-function drawGrid(){
-  const g=60,sx=Math.floor(G.cam.x/g)*g,sy=Math.floor(G.cam.y/g)*g;
-  X.strokeStyle='rgba(255,255,255,.025)';X.lineWidth=1;
-  for(let x=sx;x<G.cam.x+W+g;x+=g){X.beginPath();X.moveTo(x,G.cam.y);X.lineTo(x,G.cam.y+H);X.stroke()}
-  for(let y=sy;y<G.cam.y+H+g;y+=g){X.beginPath();X.moveTo(G.cam.x,y);X.lineTo(G.cam.x+W,y);X.stroke()}
+// ============================================================
+//  地图系统 - 多种随机地图
+// ============================================================
+const MAP_TYPES=[
+  {id:'forest',name:'幽暗森林',bg:'#0a1a0a',accent:'#1a3a1a',deco:'#2d5a2d'},
+  {id:'snow',name:'冰雪荒原',bg:'#1a1a2a',accent:'#2a2a3a',deco:'#c8d8e8'},
+  {id:'desert',name:'灼热沙漠',bg:'#1a1408',accent:'#2a2010',deco:'#d4a543'},
+  {id:'volcano',name:'熔岩深渊',bg:'#1a0a0a',accent:'#2a0a0a',deco:'#e74c3c'},
+  {id:'swamp',name:'幽暗沼泽',bg:'#0a1208',accent:'#1a2208',deco:'#4a6a2a'},
+  {id:'graveyard',name:'亡灵墓地',bg:'#0a0a12',accent:'#1a1a22',deco:'#5a5a6a'},
+  {id:'crystal',name:'水晶洞穴',bg:'#0a0a1a',accent:'#14142a',deco:'#8e44ad'},
+  {id:'ruins',name:'远古遗迹',bg:'#120e0a',accent:'#221e14',deco:'#8a7a5a'},
+];
+let curMap=null;
+let mapDecos=[]; // 地图装饰物
+let mapParticles=[]; // 地图环境粒子
+
+function genMap(){
+  curMap=MAP_TYPES[Math.floor(Math.random()*MAP_TYPES.length)];
+  mapDecos=[];mapParticles=[];
+  const rng=(a,b)=>a+Math.random()*(b-a);
+  // 根据地图类型生成装饰物
+  for(let i=0;i<150;i++){
+    const x=rng(-4000,4000),y=rng(-4000,4000);
+    const d={x,y,sz:rng(5,20),a:Math.random()*6.28,type:Math.floor(Math.random()*3),rot:rng(0,6.28)};
+    mapDecos.push(d)
+  }
+  // 环境粒子
+  for(let i=0;i<40;i++){
+    const x=rng(-4000,4000),y=rng(-4000,4000);
+    mapParticles.push({x,y,vx:rng(-.3,.3),vy:rng(-.3,.3),sz:rng(1,3),a:rng(.1,.3),life:rng(3,8),max:rng(3,8),
+      phase:Math.random()*6.28})
+  }
+  // 预生成草地位置（固定种子避免每帧闪烁）
+  window._grassPositions=[];
+  for(let i=0;i<300;i++){
+    window._grassPositions.push({gx:rng(-4000,4000),gy:rng(-4000,4000),gh:rng(6,12),phase:rng(0,6.28)})
+  }
+}
+
+function drawBackground(){
+  if(!curMap)return;
+  const m=curMap;
+  // 基础底色
+  X.fillStyle=m.bg;X.fillRect(G.cam.x,G.cam.y,W,H);
+  X.save();X.translate(-G.cam.x,-G.cam.y);
+  // 地图纹理网格
+  const g=80,sx=Math.floor(G.cam.x/g)*g,sy=Math.floor(G.cam.y/g)*g;
+  // 绘制不同风格的背景纹理
+  switch(m.id){
+    case 'forest':
+      // 森林地面：深绿色草地
+      for(let x=sx;x<G.cam.x+W+g;x+=g)for(let y=sy;y<G.cam.y+H+g;y+=g){
+        X.fillStyle=((x/g+y/g)%2===0)?'#0d1f0d':'#0a180a';X.fillRect(x,y,g,g)}
+      // 小草（用预生成位置）
+      X.strokeStyle='rgba(40,80,40,.15)';X.lineWidth=1;
+      (window._grassPositions||[]).forEach(gp=>{
+        if(gp.gx<G.cam.x-20||gp.gx>G.cam.x+W+20||gp.gy<G.cam.y-20||gp.gy>G.cam.y+H+20)return;
+        X.beginPath();X.moveTo(gp.gx,gp.gy);X.lineTo(gp.gx+Math.sin(performance.now()/1000+gp.phase)*3,gp.gy-gp.gh);X.stroke()});
+      break;
+    case 'snow':
+      // 雪地
+      for(let x=sx;x<G.cam.x+W+g;x+=g)for(let y=sy;y<G.cam.y+H+g;y+=g){
+        X.fillStyle=((x/g+y/g)%2===0)?'#1a1a2e':'#181828';X.fillRect(x,y,g,g);
+        // 雪堆
+        X.fillStyle='rgba(200,210,230,.05)';X.beginPath();X.arc(x+g/2,y+g/2,g*.4,0,Math.PI*2);X.fill()}
+      break;
+    case 'desert':
+      // 沙地
+      for(let x=sx;x<G.cam.x+W+g;x+=g)for(let y=sy;y<G.cam.y+H+g;y+=g){
+        X.fillStyle=((x/g+y/g)%2===0)?'#1a1408':'#181206';X.fillRect(x,y,g,g);
+        // 沙纹
+        X.strokeStyle='rgba(180,140,60,.06)';X.lineWidth=1;
+        X.beginPath();X.arc(x+g/2,y+g/2,g*.35,0,Math.PI*2);X.stroke()}
+      break;
+    case 'volcano':
+      // 熔岩地
+      for(let x=sx;x<G.cam.x+W+g;x+=g)for(let y=sy;y<G.cam.y+H+g;y+=g){
+        X.fillStyle=((x/g+y/g)%2===0)?'#1a0808':'#180606';X.fillRect(x,y,g,g);
+        // 熔岩裂缝
+        X.strokeStyle=`rgba(231,76,60,${.03+Math.sin(performance.now()/1000+x)*.02})`;X.lineWidth=2;
+        X.beginPath();X.moveTo(x,y+g/2);X.quadraticCurveTo(x+g/2,y+g/2+Math.sin(performance.now()/500)*3,x+g,y+g/2);X.stroke()}
+      break;
+    case 'swamp':
+      // 沼泽
+      for(let x=sx;x<G.cam.x+W+g;x+=g)for(let y=sy;y<G.cam.y+H+g;y+=g){
+        X.fillStyle=((x/g+y/g)%2===0)?'#0a1208':'#080e06';X.fillRect(x,y,g,g);
+        // 水洼
+        X.fillStyle='rgba(20,60,40,.08)';X.beginPath();X.arc(x+g/2,y+g/2,g*.3,0,Math.PI*2);X.fill()}
+      break;
+    case 'graveyard':
+      // 墓地石板
+      for(let x=sx;x<G.cam.x+W+g;x+=g)for(let y=sy;y<G.cam.y+H+g;y+=g){
+        X.fillStyle=((x/g+y/g)%2===0)?'#0e0e16':'#0c0c14';X.fillRect(x,y,g,g);
+        X.strokeStyle='rgba(80,80,100,.05)';X.lineWidth=1;X.strokeRect(x+2,y+2,g-4,g-4)}
+      break;
+    case 'crystal':
+      // 洞穴地面
+      for(let x=sx;x<G.cam.x+W+g;x+=g)for(let y=sy;y<G.cam.y+H+g;y+=g){
+        X.fillStyle=((x/g+y/g)%2===0)?'#0e0e1e':'#0c0c1a';X.fillRect(x,y,g,g);
+        // 微光
+        const gl=.02+Math.sin(performance.now()/800+x*.1+y*.1)*.01;
+        X.fillStyle=`rgba(142,68,173,${gl})`;X.fillRect(x,y,g,g)}
+      break;
+    case 'ruins':
+      // 遗迹石板
+      for(let x=sx;x<G.cam.x+W+g;x+=g)for(let y=sy;y<G.cam.y+H+g;y+=g){
+        X.fillStyle=((x/g+y/g)%2===0)?'#14100c':'#120e0a';X.fillRect(x,y,g,g);
+        X.strokeStyle='rgba(100,90,60,.04)';X.lineWidth=1;
+        X.beginPath();X.moveTo(x,y);X.lineTo(x+g,y+g);X.stroke();
+        X.beginPath();X.moveTo(x+g,y);X.lineTo(x,y+g);X.stroke()}
+      break;
+  }
+  // 绘制装饰物
+  mapDecos.forEach(d=>{
+    if(d.x<G.cam.x-50||d.x>G.cam.x+W+50||d.y<G.cam.y-50||d.y>G.cam.y+H+50)return;
+    switch(m.id){
+      case 'forest':drawTree(d);break;
+      case 'snow':drawSnowRock(d);break;
+      case 'desert':drawCactus(d);break;
+      case 'volcano':drawLavaRock(d);break;
+      case 'swamp':drawMushroom(d);break;
+      case 'graveyard':drawTombstone(d);break;
+      case 'crystal':drawCrystal(d);break;
+      case 'ruins':drawRuinPillar(d);break;
+    }
+  });
+  // 环境粒子
+  const t=performance.now()/1000;
+  mapParticles.forEach(p=>{
+    p.x+=p.vx;p.y+=p.vy;p.phase+=.01;
+    const alpha=p.a*(0.5+Math.sin(p.phase)*0.5);
+    if(p.x<G.cam.x-10||p.x>G.cam.x+W+10||p.y<G.cam.y-10||p.y>G.cam.y+H+10)return;
+    X.fillStyle=m.id==='snow'?`rgba(255,255,255,${alpha})`:
+              m.id==='volcano'?`rgba(255,100,50,${alpha*.6})`:
+              m.id==='crystal'?`rgba(142,68,173,${alpha})`:
+              m.id==='forest'?`rgba(100,255,100,${alpha*.5})`:
+              m.id==='graveyard'?`rgba(200,200,200,${alpha*.4})`:
+              `rgba(200,200,150,${alpha*.3})`;
+    X.beginPath();X.arc(p.x,p.y,p.sz,0,6.28);X.fill()
+  });
+  X.restore()
+}
+
+// 装饰物绘制函数
+function drawTree(d){
+  X.fillStyle='#1a3a1a';X.beginPath();X.moveTo(d.x,d.y-d.sz*3);X.lineTo(d.x-d.sz*.8,d.y);X.lineTo(d.x+d.sz*.8,d.y);X.closePath();X.fill();
+  X.fillStyle='#2a4a2a';X.beginPath();X.moveTo(d.x,d.y-d.sz*2.2);X.lineTo(d.x-d.sz*.6,d.y-d.sz*.5);X.lineTo(d.x+d.sz*.6,d.y-d.sz*.5);X.closePath();X.fill();
+  X.fillStyle='#3a2a1a';X.fillRect(d.x-d.sz*.1,d.y,d.sz*.2,d.sz*.5)
+}
+function drawSnowRock(d){
+  X.fillStyle='rgba(180,190,210,.12)';X.beginPath();X.arc(d.x,d.y,d.sz,0,Math.PI*2);X.fill();
+  X.fillStyle='rgba(220,230,240,.08)';X.beginPath();X.arc(d.x-d.sz*.2,d.y-d.sz*.2,d.sz*.5,0,Math.PI*2);X.fill()
+}
+function drawCactus(d){
+  X.fillStyle='rgba(80,100,40,.15)';X.fillRect(d.x-d.sz*.15,d.y-d.sz*1.5,d.sz*.3,d.sz*1.5);
+  X.fillRect(d.x-d.sz*.6,d.y-d.sz,d.sz*.4,d.sz*.2);
+  X.fillRect(d.x+d.sz*.2,d.y-d.sz*.8,d.sz*.4,d.sz*.2)
+}
+function drawLavaRock(d){
+  X.fillStyle='rgba(60,20,20,.2)';X.beginPath();X.moveTo(d.x,d.y-d.sz);X.lineTo(d.x-d.sz,d.y);X.lineTo(d.x+d.sz,d.y);X.closePath();X.fill();
+  // 熔岩发光
+  const gl=.05+Math.sin(performance.now()/500+d.x)*.03;
+  X.fillStyle=`rgba(231,76,60,${gl})`;X.beginPath();X.arc(d.x+d.sz*.3,d.y+d.sz*.2,d.sz*.3,0,Math.PI*2);X.fill()
+}
+function drawMushroom(d){
+  X.fillStyle='rgba(100,80,60,.15)';X.fillRect(d.x-d.sz*.05,d.y-d.sz,d.sz*.1,d.sz);
+  X.fillStyle='rgba(80,120,60,.12)';X.beginPath();X.arc(d.x,d.y-d.sz,d.sz*.5,Math.PI,0);X.closePath();X.fill()
+}
+function drawTombstone(d){
+  X.fillStyle='rgba(80,80,100,.12)';X.fillRect(d.x-d.sz*.3,d.y-d.sz*1.2,d.sz*.6,d.sz*1.2);
+  X.beginPath();X.arc(d.x,d.y-d.sz*1.2,d.sz*.3,Math.PI,0);X.closePath();X.fill();
+  // 十字
+  X.strokeStyle='rgba(120,120,140,.1)';X.lineWidth=1;
+  X.beginPath();X.moveTo(d.x,d.y-d.sz*1.4);X.lineTo(d.x,d.y-d.sz*.5);X.stroke();
+  X.beginPath();X.moveTo(d.x-d.sz*.15,d.y-d.sz);X.lineTo(d.x+d.sz*.15,d.y-d.sz);X.stroke()
+}
+function drawCrystal(d){
+  const gl=.1+Math.sin(performance.now()/300+d.x+d.y)*.05;
+  X.fillStyle=`rgba(142,68,173,${gl})`;
+  X.beginPath();X.moveTo(d.x,d.y-d.sz*1.5);X.lineTo(d.x-d.sz*.4,d.y);X.lineTo(d.x+d.sz*.4,d.y);X.closePath();X.fill();
+  X.fillStyle=`rgba(52,152,219,${gl*.5})`;
+  X.beginPath();X.moveTo(d.x+d.sz*.3,d.y-d.sz);X.lineTo(d.x+d.sz*.1,d.y-d.sz*.3);X.lineTo(d.x+d.sz*.5,d.y);X.closePath();X.fill()
+}
+function drawRuinPillar(d){
+  X.fillStyle='rgba(120,110,80,.1)';X.fillRect(d.x-d.sz*.15,d.y-d.sz*2,d.sz*.3,d.sz*2);
+  X.fillRect(d.x-d.sz*.3,d.y-d.sz*2.1,d.sz*.6,d.sz*.15);
+  X.fillRect(d.x-d.sz*.3,d.y,d.sz*.6,d.sz*.1)
 }
 
 function drawMinimap(){
@@ -900,7 +1082,7 @@ function resetGame(){
   G.enemies=[];G.proj=[];G.pickups=[];G.parts=[];G.dnums=[];
   G.spawnT=0;G.bossT=0;G.diff=1;G.P=mkPlayer();
   const wi=START_WEPS[Math.floor(Math.random()*START_WEPS.length)];
-  G.weaps=[{...WDB[wi],lv:1,cd:0}];updateHUD()
+  G.weaps=[{...WDB[wi],lv:1,cd:0}];genMap();updateHUD()
 }
 function playerDie(){
   G.on=false;
