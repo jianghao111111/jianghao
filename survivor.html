@@ -165,59 +165,239 @@ const UPGRADES=[
 //  敌人定义 - 精美建模
 // ============================================================
 const EDEF={
+  // 普通战士 - 红色圆形带护甲和愤怒表情
   basic:{hp:18,spd:1.3,sz:14,color:'#e74c3c',xp:3,dmg:8,
     draw:(c,e)=>{
-      c.beginPath();c.arc(e.x,e.y,e.sz,0,Math.PI*2);c.fillStyle=e.color;c.fill();
-      c.beginPath();c.arc(e.x,e.y,e.sz*.5,0,Math.PI*2);c.fillStyle='rgba(0,0,0,.3)';c.fill();
-      const ex=e.x-e.sz*.25,ey=e.y-e.sz*.15;
-      c.fillStyle='#fff';c.beginPath();c.arc(ex,ey,3,0,Math.PI*2);c.fill();
-      c.beginPath();c.arc(e.x+e.sz*.25,ey,3,0,Math.PI*2);c.fill();
-      c.fillStyle='#000';c.beginPath();c.arc(ex,ey,1.5,0,Math.PI*2);c.fill();
-      c.beginPath();c.arc(e.x+e.sz*.25,ey,1.5,0,Math.PI*2);c.fill();
-      c.strokeStyle='#fff';c.lineWidth=1.5;c.beginPath();c.arc(e.x,e.y+e.sz*.3,e.sz*.2,.1*Math.PI,.9*Math.PI);c.stroke()
+      // 外护甲环
+      c.beginPath();c.arc(e.x,e.y,e.sz+2,0,Math.PI*2);c.strokeStyle='rgba(255,150,150,.35)';c.lineWidth=2;c.stroke();
+      // 主体
+      c.beginPath();c.arc(e.x,e.y,e.sz,0,Math.PI*2);
+      const bg=c.createRadialGradient(e.x-e.sz*.3,e.y-e.sz*.3,0,e.x,e.y,e.sz);
+      bg.addColorStop(0,'#ff8a80');bg.addColorStop(1,'#c0392b');c.fillStyle=bg;c.fill();
+      // 暗色核心
+      c.beginPath();c.arc(e.x,e.y+e.sz*.15,e.sz*.55,0,Math.PI*2);c.fillStyle='rgba(0,0,0,.2)';c.fill();
+      // 头盔/护额
+      c.fillStyle='#b03a2e';c.fillRect(e.x-e.sz*.7,e.y-e.sz*.85,e.sz*1.4,e.sz*.35);
+      c.fillStyle='#f39c12';c.fillRect(e.x-e.sz*.2,e.y-e.sz*.9,e.sz*.4,e.sz*.2);
+      // 愤怒眉毛
+      c.strokeStyle='#fff';c.lineWidth=2;c.beginPath();
+      c.moveTo(e.x-e.sz*.45,e.y-e.sz*.35);c.lineTo(e.x-e.sz*.15,e.y-e.sz*.25);c.stroke();
+      c.beginPath();c.moveTo(e.x+e.sz*.45,e.y-e.sz*.35);c.lineTo(e.x+e.sz*.15,e.y-e.sz*.25);c.stroke();
+      // 眼睛
+      c.fillStyle='#fff';c.beginPath();c.arc(e.x-e.sz*.25,e.y-e.sz*.1,3.5,0,Math.PI*2);c.fill();
+      c.beginPath();c.arc(e.x+e.sz*.25,e.y-e.sz*.1,3.5,0,Math.PI*2);c.fill();
+      c.fillStyle='#c0392b';c.beginPath();c.arc(e.x-e.sz*.2,e.y-e.sz*.08,2,0,Math.PI*2);c.fill();
+      c.beginPath();c.arc(e.x+e.sz*.3,e.y-e.sz*.08,2,0,Math.PI*2);c.fill();
+      // 嘴巴（龇牙）
+      c.fillStyle='#fff';c.fillRect(e.x-e.sz*.3,e.y+e.sz*.3,e.sz*.6,e.sz*.15);
+      c.strokeStyle='#8b0000';c.lineWidth=1;c.strokeRect(e.x-e.sz*.3,e.y+e.sz*.3,e.sz*.6,e.sz*.15)
     }},
+  // 快速 - 橙色箭头带尾翼
   fast:{hp:10,spd:2.8,sz:10,color:'#e67e22',xp:2,dmg:5,
     draw:(c,e)=>{
       const a=Math.atan2(G.P.y-e.y,G.P.x-e.x);c.save();c.translate(e.x,e.y);c.rotate(a);
-      c.beginPath();c.moveTo(e.sz,0);c.lineTo(-e.sz*.7,-e.sz*.7);c.lineTo(-e.sz*.4,0);c.lineTo(-e.sz*.7,e.sz*.7);
-      c.closePath();c.fillStyle=e.color;c.fill();
-      c.beginPath();c.arc(0,0,e.sz*.25,0,Math.PI*2);c.fillStyle='rgba(0,0,0,.3)';c.fill();
-      c.fillStyle='#fff';c.beginPath();c.arc(e.sz*.3,0,2,0,Math.PI*2);c.fill();c.restore()
+      // 尾翼
+      c.fillStyle='#d35400';c.beginPath();c.moveTo(-e.sz*.4,0);c.lineTo(-e.sz*1.1,-e.sz*.8);c.lineTo(-e.sz*.7,0);c.lineTo(-e.sz*1.1,e.sz*.8);c.closePath();c.fill();
+      // 主体
+      c.beginPath();c.moveTo(e.sz,0);c.lineTo(-e.sz*.5,-e.sz*.6);c.lineTo(-e.sz*.3,0);c.lineTo(-e.sz*.5,e.sz*.6);c.closePath();
+      const fg=c.createLinearGradient(-e.sz,0,e.sz,0);fg.addColorStop(0,'#e67e22');fg.addColorStop(1,'#f39c12');c.fillStyle=fg;c.fill();
+      // 核心光点
+      c.beginPath();c.arc(e.sz*.2,0,e.sz*.3,0,Math.PI*2);c.fillStyle='rgba(255,255,255,.25)';c.fill();
+      // 眼睛
+      c.fillStyle='#fff';c.beginPath();c.arc(e.sz*.4,0,2.5,0,Math.PI*2);c.fill();
+      c.fillStyle='#000';c.beginPath();c.arc(e.sz*.45,0,1.2,0,Math.PI*2);c.fill();
+      c.restore()
     }},
+  // 坦克 - 紫色六边形重甲
   tank:{hp:65,spd:.8,sz:22,color:'#8e44ad',xp:8,dmg:15,
     draw:(c,e)=>{
+      // 外护甲环
+      c.beginPath();c.arc(e.x,e.y,e.sz+5,0,Math.PI*2);c.strokeStyle='rgba(180,100,255,.3)';c.lineWidth=2;c.stroke();
+      // 外六边形
       c.beginPath();for(let i=0;i<6;i++){const a=Math.PI/3*i-Math.PI/6;c.lineTo(e.x+e.sz*Math.cos(a),e.y+e.sz*Math.sin(a))}
-      c.closePath();c.fillStyle=e.color;c.fill();
-      c.beginPath();for(let i=0;i<6;i++){const a=Math.PI/3*i-Math.PI/6;c.lineTo(e.x+e.sz*.6*Math.cos(a),e.y+e.sz*.6*Math.sin(a))}
-      c.closePath();c.fillStyle='rgba(0,0,0,.25)';c.fill();
-      c.fillStyle='#fff';c.beginPath();c.arc(e.x,e.y,5,0,Math.PI*2);c.fill();
-      c.fillStyle='#c0392b';c.beginPath();c.arc(e.x,e.y,2.5,0,Math.PI*2);c.fill()
+      c.closePath();const tg=c.createRadialGradient(e.x,e.y,0,e.x,e.y,e.sz);tg.addColorStop(0,'#bb8fce');tg.addColorStop(1,'#6c3483');c.fillStyle=tg;c.fill();
+      // 内六边形
+      c.beginPath();for(let i=0;i<6;i++){const a=Math.PI/3*i;c.lineTo(e.x+e.sz*.65*Math.cos(a),e.y+e.sz*.65*Math.sin(a))}
+      c.closePath();c.fillStyle='rgba(0,0,0,.2)';c.fill();
+      // 肩甲装饰
+      c.fillStyle='#7d3c98';c.fillRect(e.x-e.sz*.9,e.y-e.sz*.15,e.sz*.3,e.sz*.3);
+      c.fillRect(e.x+e.sz*.6,e.y-e.sz*.15,e.sz*.3,e.sz*.3);
+      // 独眼
+      c.fillStyle='#fff';c.beginPath();c.arc(e.x,e.y,6,0,Math.PI*2);c.fill();
+      c.fillStyle='#c0392b';c.beginPath();c.arc(e.x,e.y,3.5,0,Math.PI*2);c.fill();
+      c.fillStyle='#000';c.beginPath();c.arc(e.x,e.y,1.8,0,Math.PI*2);c.fill()
     }},
+  // 射手 - 绿色菱形带瞄准器
   shooter:{hp:22,spd:1.5,sz:15,color:'#2ecc71',xp:5,dmg:10,shoots:true,shootCd:2.2,
     draw:(c,e)=>{
       c.save();c.translate(e.x,e.y);
-      c.beginPath();c.moveTo(0,-e.sz);c.lineTo(e.sz*.8,0);c.lineTo(0,e.sz);c.lineTo(-e.sz*.8,0);c.closePath();
-      c.fillStyle=e.color;c.fill();
-      c.beginPath();c.moveTo(0,-e.sz*.5);c.lineTo(e.sz*.4,0);c.lineTo(0,e.sz*.5);c.lineTo(-e.sz*.4,0);c.closePath();
-      c.fillStyle='rgba(0,0,0,.2)';c.fill();
       const a=Math.atan2(G.P.y-e.y,G.P.x-e.x);
-      c.fillStyle='#fff';c.beginPath();c.arc(Math.cos(a)*e.sz*.6,Math.sin(a)*e.sz*.6,3,0,Math.PI*2);c.fill();c.restore()
+      // 外发光
+      c.beginPath();c.arc(0,0,e.sz+4,0,Math.PI*2);c.strokeStyle='rgba(100,255,150,.25)';c.lineWidth=1.5;c.stroke();
+      // 主体菱形
+      c.beginPath();c.moveTo(0,-e.sz);c.lineTo(e.sz*.8,0);c.lineTo(0,e.sz);c.lineTo(-e.sz*.8,0);c.closePath();
+      const sg=c.createLinearGradient(0,-e.sz,0,e.sz);sg.addColorStop(0,'#82e0aa');sg.addColorStop(1,'#1e8449');c.fillStyle=sg;c.fill();
+      // 内菱形
+      c.beginPath();c.moveTo(0,-e.sz*.5);c.lineTo(e.sz*.4,0);c.lineTo(0,e.sz*.5);c.lineTo(-e.sz*.4,0);c.closePath();
+      c.fillStyle='rgba(0,0,0,.15)';c.fill();
+      // 瞄准器
+      c.save();c.rotate(a);
+      c.fillStyle='#fff';c.beginPath();c.arc(e.sz*.6,0,3.5,0,Math.PI*2);c.fill();
+      c.fillStyle='#e74c3c';c.beginPath();c.arc(e.sz*.6,0,2,0,Math.PI*2);c.fill();
+      // 准星十字
+      c.strokeStyle='rgba(255,255,255,.5)';c.lineWidth=1;c.beginPath();c.moveTo(e.sz*.6,-e.sz*.35);c.lineTo(e.sz*.6,e.sz*.35);c.stroke();
+      c.beginPath();c.moveTo(e.sz*.3,0);c.lineTo(e.sz*.9,0);c.stroke();
+      c.restore();c.restore()
     }},
+  // Boss - 红色星形皇冠王
   boss:{hp:550,spd:1,sz:38,color:'#c0392b',xp:50,dmg:25,boss:true,
     draw:(c,e)=>{
-      c.beginPath();c.arc(e.x,e.y,e.sz+6,0,Math.PI*2);c.strokeStyle='rgba(255,100,100,.3)';c.lineWidth=2;c.stroke();
+      // 外光环
+      const t=performance.now()/1000;
+      c.beginPath();c.arc(e.x,e.y,e.sz+8+Math.sin(t*3)*2,0,Math.PI*2);c.strokeStyle='rgba(255,100,100,.3)';c.lineWidth=2;c.stroke();
+      // 星形主体
       c.beginPath();for(let i=0;i<8;i++){const a=Math.PI/4*i,r=i%2?e.sz*.7:e.sz;c.lineTo(e.x+r*Math.cos(a),e.y+r*Math.sin(a))}
-      c.closePath();c.fillStyle=e.color;c.fill();
-      c.beginPath();c.arc(e.x,e.y,e.sz*.45,0,Math.PI*2);c.fillStyle='rgba(0,0,0,.3)';c.fill();
+      c.closePath();const bg=c.createRadialGradient(e.x,e.y,0,e.x,e.y,e.sz);bg.addColorStop(0,'#ff8a80');bg.addColorStop(1,'#922b21');c.fillStyle=bg;c.fill();
+      // 内部
+      c.beginPath();c.arc(e.x,e.y,e.sz*.45,0,Math.PI*2);c.fillStyle='rgba(0,0,0,.25)';c.fill();
+      // 皇冠
       c.fillStyle='#f1c40f';c.beginPath();
       c.moveTo(e.x-e.sz*.5,e.y-e.sz*.6);c.lineTo(e.x-e.sz*.35,e.y-e.sz*.9);
       c.lineTo(e.x-e.sz*.15,e.y-e.sz*.65);c.lineTo(e.x,e.y-e.sz);
       c.lineTo(e.x+e.sz*.15,e.y-e.sz*.65);c.lineTo(e.x+e.sz*.35,e.y-e.sz*.9);
       c.lineTo(e.x+e.sz*.5,e.y-e.sz*.6);c.closePath();c.fill();
-      c.fillStyle='#fff';c.beginPath();c.arc(e.x-8,e.y-3,4,0,Math.PI*2);c.fill();
-      c.beginPath();c.arc(e.x+8,e.y-3,4,0,Math.PI*2);c.fill();
-      c.fillStyle='#e74c3c';c.beginPath();c.arc(e.x-8,e.y-3,2,0,Math.PI*2);c.fill();
-      c.beginPath();c.arc(e.x+8,e.y-3,2,0,Math.PI*2);c.fill()
+      // 皇冠宝石
+      c.fillStyle='#e74c3c';c.beginPath();c.arc(e.x,e.y-e.sz*.75,2.5,0,Math.PI*2);c.fill();
+      c.fillStyle='#3498db';c.beginPath();c.arc(e.x-e.sz*.25,e.y-e.sz*.6,2,0,Math.PI*2);c.fill();
+      c.beginPath();c.arc(e.x+e.sz*.25,e.y-e.sz*.6,2,0,Math.PI*2);c.fill();
+      // 邪恶眼睛
+      c.fillStyle='#fff';c.beginPath();c.arc(e.x-8,e.y-3,5,0,Math.PI*2);c.fill();
+      c.beginPath();c.arc(e.x+8,e.y-3,5,0,Math.PI*2);c.fill();
+      c.fillStyle='#e74c3c';c.beginPath();c.arc(e.x-7,e.y-3,2.5,0,Math.PI*2);c.fill();
+      c.beginPath();c.arc(e.x+9,e.y-3,2.5,0,Math.PI*2);c.fill();
+      // 邪恶笑容
+      c.strokeStyle='#fff';c.lineWidth=2;c.beginPath();c.arc(e.x,e.y+e.sz*.25,e.sz*.35,.15*Math.PI,.85*Math.PI);c.stroke()
+    }},
+  // === 新敌人种类 ===
+  // 骷髅 - 白色骨骸带裂纹 (30s后出现)
+  skeleton:{hp:25,spd:1.8,sz:13,color:'#ecf0f1',xp:5,dmg:12,
+    draw:(c,e)=>{
+      c.save();c.translate(e.x,e.y);
+      // 颅骨渐变
+      const sg=c.createRadialGradient(-2,-3,0,0,0,e.sz);
+      sg.addColorStop(0,'#f5f5f5');sg.addColorStop(1,'#95a5a6');c.fillStyle=sg;c.beginPath();c.arc(0,0,e.sz,0,Math.PI*2);c.fill();
+      // 眼窝
+      c.fillStyle='#1a1a2e';c.beginPath();c.ellipse(-e.sz*.25,-e.sz*.15,e.sz*.22,e.sz*.28,0,0,Math.PI*2);c.fill();
+      c.beginPath();c.ellipse(e.sz*.25,-e.sz*.15,e.sz*.22,e.sz*.28,0,0,Math.PI*2);c.fill();
+      // 眼眶红光
+      c.fillStyle='#e74c3c';c.beginPath();c.arc(-e.sz*.25,-e.sz*.12,2,0,Math.PI*2);c.fill();
+      c.beginPath();c.arc(e.sz*.25,-e.sz*.12,2,0,Math.PI*2);c.fill();
+      // 鼻子
+      c.fillStyle='#1a1a2e';c.beginPath();c.moveTo(0,e.sz*.05);c.lineTo(-2,e.sz*.2);c.lineTo(2,e.sz*.2);c.closePath();c.fill();
+      // 牙齿
+      c.strokeStyle='#1a1a2e';c.lineWidth=1;for(let i=-2;i<=2;i++){
+        c.beginPath();c.moveTo(i*e.sz*.12,e.sz*.3);c.lineTo(i*e.sz*.12,e.sz*.45);c.stroke()}
+      // 裂纹
+      c.strokeStyle='rgba(0,0,0,.2)';c.lineWidth=1;c.beginPath();c.moveTo(e.sz*.5,-e.sz*.3);c.lineTo(e.sz*.2,0);c.lineTo(e.sz*.35,e.sz*.4);c.stroke();
+      c.restore()
+    }},
+  // 幽灵 - 半透明飘浮 (45s后出现)
+  ghost:{hp:20,spd:1.5,sz:16,color:'rgba(200,200,255,.6)',xp:4,dmg:10,
+    draw:(c,e)=>{
+      c.save();c.translate(e.x,e.y);c.globalAlpha=.55+Math.sin(performance.now()/300)*.1;
+      // 飘动身体
+      c.beginPath();c.arc(0,-e.sz*.2,e.sz,Math.PI,0);
+      // 底部波浪
+      const by=e.sz*.7,segments=5,sw=e.sz*2/segments;
+      for(let i=0;i<=segments;i++){
+        const sx=-e.sz+i*sw;
+        const wy=by+Math.sin(performance.now()/200+i*1.5)*4;
+        c.lineTo(sx,wy)}
+      c.closePath();
+      const gg=c.createLinearGradient(0,-e.sz,0,e.sz);
+      gg.addColorStop(0,'rgba(220,220,255,.7)');gg.addColorStop(1,'rgba(150,150,200,.1)');c.fillStyle=gg;c.fill();
+      // 眼洞
+      c.fillStyle='rgba(0,0,30,.8)';c.beginPath();c.ellipse(-e.sz*.25,-e.sz*.2,e.sz*.2,e.sz*.25,0,0,Math.PI*2);c.fill();
+      c.beginPath();c.ellipse(e.sz*.25,-e.sz*.2,e.sz*.2,e.sz*.25,0,0,Math.PI*2);c.fill();
+      c.restore()
+    }},
+  // 史莱姆 - 弹跳软体 (15s后出现)
+  slime:{hp:15,spd:1,sz:12,color:'#2ecc71',xp:2,dmg:6,
+    draw:(c,e)=>{
+      c.save();c.translate(e.x,e.y);
+      const squish=1+Math.sin(performance.now()/400)*.08;
+      c.scale(1/squish,squish);
+      // 主体椭圆
+      c.beginPath();c.ellipse(0,0,e.sz,e.sz*.85,0,0,Math.PI*2);
+      const slg=c.createRadialGradient(-e.sz*.2,-e.sz*.3,0,0,0,e.sz);
+      slg.addColorStop(0,'#82e0aa');slg.addColorStop(.6,'#27ae60');slg.addColorStop(1,'#1e8449');c.fillStyle=slg;c.fill();
+      // 高光
+      c.fillStyle='rgba(255,255,255,.3)';c.beginPath();c.ellipse(-e.sz*.2,-e.sz*.3,e.sz*.3,e.sz*.2,-.3,0,Math.PI*2);c.fill();
+      // 眼睛
+      c.fillStyle='#fff';c.beginPath();c.arc(-e.sz*.2,-e.sz*.1,3.5,0,Math.PI*2);c.fill();
+      c.beginPath();c.arc(e.sz*.2,-e.sz*.1,3.5,0,Math.PI*2);c.fill();
+      c.fillStyle='#000';c.beginPath();c.arc(-e.sz*.15,-e.sz*.05,2,0,Math.PI*2);c.fill();
+      c.beginPath();c.arc(e.sz*.25,-e.sz*.05,2,0,Math.PI*2);c.fill();
+      // 微笑
+      c.strokeStyle='rgba(0,0,0,.3)';c.lineWidth=1.5;c.beginPath();c.arc(0,e.sz*.15,e.sz*.25,.2*Math.PI,.8*Math.PI);c.stroke();
+      c.restore()
+    }},
+  // 蜘蛛 - 多足爬行 (60s后出现)
+  spider:{hp:30,spd:2.2,sz:11,color:'#2c3e50',xp:6,dmg:14,
+    draw:(c,e)=>{
+      c.save();c.translate(e.x,e.y);
+      const t=performance.now()/1000;
+      // 腿
+      c.strokeStyle='#34495e';c.lineWidth=2;
+      for(let side=-1;side<=1;side+=2){for(let i=0;i<4;i++){
+        const angle=.3+i*.35;const legLen=e.sz*1.2;
+        const bx=Math.cos(angle)*e.sz*.6*side,by=Math.sin(angle)*e.sz*.4-e.sz*.2;
+        const ex=bx+Math.cos(angle)*legLen*side,ey=by+Math.sin(t*4+i)*3+Math.sin(angle)*legLen*.6;
+        c.beginPath();c.moveTo(bx,by);c.quadraticCurveTo(bx+side*legLen*.3,by-5,ex,ey);c.stroke()}}
+      // 腹部
+      c.beginPath();c.ellipse(0,e.sz*.3,e.sz*.5,e.sz*.4,0,0,Math.PI*2);c.fillStyle='#1a252f';c.fill();
+      // 头部
+      c.beginPath();c.arc(0,-e.sz*.15,e.sz*.6,0,Math.PI*2);
+      const spg=c.createRadialGradient(-2,-e.sz*.25,0,0,-e.sz*.15,e.sz*.6);
+      spg.addColorStop(0,'#5d6d7e');spg.addColorStop(1,'#1a252f');c.fillStyle=spg;c.fill();
+      // 多只眼睛
+      c.fillStyle='#e74c3c';
+      c.beginPath();c.arc(-e.sz*.2,-e.sz*.25,2.5,0,Math.PI*2);c.fill();
+      c.beginPath();c.arc(e.sz*.2,-e.sz*.25,2.5,0,Math.PI*2);c.fill();
+      c.fillStyle='#fff';
+      c.beginPath();c.arc(-e.sz*.35,-e.sz*.1,1.5,0,Math.PI*2);c.fill();
+      c.beginPath();c.arc(e.sz*.35,-e.sz*.1,1.5,0,Math.PI*2);c.fill();
+      // 毒牙
+      c.fillStyle='#8e44ad';c.beginPath();c.moveTo(-3,e.sz*.05);c.lineTo(-1,e.sz*.2);c.lineTo(1,e.sz*.05);c.fill();
+      c.beginPath();c.moveTo(1,e.sz*.05);c.lineTo(3,e.sz*.2);c.lineTo(5,e.sz*.05);c.fill();
+      c.restore()
+    }},
+  // 精英战士 - 金色重甲稀有怪
+  elite:{hp:80,spd:1.6,sz:18,color:'#f39c12',xp:15,dmg:20,
+    draw:(c,e)=>{
+      // 金色光环
+      const t=performance.now()/1000;
+      c.beginPath();c.arc(e.x,e.y,e.sz+6+Math.sin(t*2)*2,0,Math.PI*2);c.strokeStyle='rgba(243,156,18,.35)';c.lineWidth=2;c.stroke();
+      // 铠甲主体
+      c.beginPath();c.arc(e.x,e.y,e.sz,0,Math.PI*2);
+      const eg=c.createRadialGradient(e.x-e.sz*.3,e.y-e.sz*.3,0,e.x,e.y,e.sz);
+      eg.addColorStop(0,'#f9e79f');eg.addColorStop(.5,'#f39c12');eg.addColorStop(1,'#d68910');c.fillStyle=eg;c.fill();
+      // 胸甲纹路
+      c.strokeStyle='rgba(139,90,43,.4)';c.lineWidth=2;c.beginPath();
+      c.moveTo(e.x-e.sz*.5,e.y-e.sz*.5);c.lineTo(e.x,e.y);c.lineTo(e.x+e.sz*.5,e.y-e.sz*.5);c.stroke();
+      c.beginPath();c.moveTo(e.x-e.sz*.5,e.y+e.sz*.2);c.lineTo(e.x,e.y-e.sz*.1);c.lineTo(e.x+e.sz*.5,e.y+e.sz*.2);c.stroke();
+      // 头盔
+      c.fillStyle='#b7950b';c.fillRect(e.x-e.sz*.65,e.y-e.sz*.85,e.sz*1.3,e.sz*.4);
+      c.fillStyle='#f1c40f';c.beginPath();c.arc(e.x,e.y-e.sz*.65,e.sz*.2,0,Math.PI*2);c.fill();
+      // 面罩
+      c.fillStyle='#7d6608';c.fillRect(e.x-e.sz*.4,e.y-e.sz*.55,e.sz*.8,e.sz*.25);
+      // 眼睛（发光）
+      c.fillStyle='#e74c3c';c.shadowColor='#e74c3c';c.shadowBlur=6;
+      c.beginPath();c.arc(e.x-e.sz*.2,e.y-e.sz*.4,3,0,Math.PI*2);c.fill();
+      c.beginPath();c.arc(e.x+e.sz*.2,e.y-e.sz*.4,3,0,Math.PI*2);c.fill();c.shadowBlur=0;
+      // 肩甲
+      c.fillStyle='#d68910';c.fillRect(e.x-e.sz*.85,e.y-e.sz*.2,e.sz*.35,e.sz*.35);
+      c.fillRect(e.x+e.sz*.5,e.y-e.sz*.2,e.sz*.35,e.sz*.35)
     }}
 };
 
@@ -287,7 +467,14 @@ function spawnE(type,x,y){
 function spawnWave(){
   const n=Math.floor(3+G.time/15*G.diff);
   for(let i=0;i<n;i++){const r=Math.random();let t='basic';
-    if(G.time>60&&r<.3)t='fast';if(G.time>120&&r<.2)t='tank';if(G.time>90&&r<.15)t='shooter';
+    if(G.time>15&&r<.15)t='slime';
+    if(G.time>30&&r<.2)t='skeleton';
+    if(G.time>45&&r<.25)t='ghost';
+    if(G.time>60&&r<.2)t='fast';
+    if(G.time>60&&r<.15)t='spider';
+    if(G.time>120&&r<.12)t='tank';
+    if(G.time>90&&r<.08)t='shooter';
+    if(G.time>150&&r<.06)t='elite';
     spawnE(t)}
 }
 
@@ -578,28 +765,66 @@ function render(){
     }
   }
 
-  // 玩家
+  // 玩家 - 精细建模
   if(!(p.ultAnim&&p.ultAnim.phase!=='done')){
     X.save();
     if(p.inv>0&&Math.floor(p.inv*10)%2===0)X.globalAlpha=.5;
+    //  Berserk aura
     if(p.berserk){const pu=Math.sin(performance.now()/200)*.3+.7;
-      X.beginPath();X.arc(p.x,p.y,p.sz+14,0,6.28);X.fillStyle=`rgba(231,76,60,${pu*.25})`;X.fill();
-      X.beginPath();X.arc(p.x,p.y,p.sz+10,0,6.28);X.strokeStyle=`rgba(255,100,100,${pu})`;X.lineWidth=2;X.stroke()}
+      X.beginPath();X.arc(p.x,p.y,p.sz+18,0,6.28);X.fillStyle=`rgba(231,76,60,${pu*.2})`;X.fill();
+      X.beginPath();X.arc(p.x,p.y,p.sz+12,0,6.28);X.strokeStyle=`rgba(255,100,100,${pu})`;X.lineWidth=3;X.stroke();
+      // 火焰粒子
+      for(let i=0;i<5;i++){const a=Math.random()*6.28,r=p.sz+8+Math.random()*12;
+        X.beginPath();X.arc(p.x+Math.cos(a)*r,p.y+Math.sin(a)*r,1.5,0,6.28);X.fillStyle=`rgba(255,150,50,${.3+Math.random()*.4})`;X.fill()}}
+    //  Ultimate ready
     if(p.ultReady){const pu=Math.sin(performance.now()/150)*.4+.6;
-      X.beginPath();X.arc(p.x,p.y,p.sz+12,0,6.28);X.strokeStyle=`rgba(241,196,15,${pu})`;X.lineWidth=3;X.stroke()}
-    X.shadowColor=p.berserk?'#e74c3c':'#3498db';X.shadowBlur=15;
-    X.fillStyle=p.berserk?'#e74c3c':'#3498db';
-    X.beginPath();X.arc(p.x,p.y,p.sz,0,6.28);X.fill();
-    X.shadowBlur=0;
-    const grd=X.createRadialGradient(p.x-p.sz*.3,p.y-p.sz*.3,0,p.x,p.y,p.sz);
-    grd.addColorStop(0,'rgba(255,255,255,.3)');grd.addColorStop(1,'rgba(0,0,0,0)');
-    X.fillStyle=grd;X.beginPath();X.arc(p.x,p.y,p.sz,0,6.28);X.fill();
-    X.fillStyle='#fff';X.beginPath();X.arc(p.x,p.y,p.sz*.45,0,6.28);X.fill();
+      X.beginPath();X.arc(p.x,p.y,p.sz+16,0,6.28);X.strokeStyle=`rgba(241,196,15,${pu*.6})`;X.lineWidth=3;X.stroke();
+      X.beginPath();X.arc(p.x,p.y,p.sz+12,0,6.28);X.strokeStyle=`rgba(241,196,15,${pu*.3})`;X.lineWidth=1.5;X.stroke()}
+    // 方向
     let dx=0,dy=-1;
     G.enemies.forEach(e=>{if(e.hp<=0)return;const d=dist(e.x,e.y,p.x,p.y);if(d<300){dx=e.x-p.x;dy=e.y-p.y}});
     const da=Math.atan2(dy,dx);
-    X.fillStyle=p.berserk?'#ff6b6b':'#74b9ff';
-    X.beginPath();X.arc(p.x+Math.cos(da)*p.sz*.7,p.y+Math.sin(da)*p.sz*.7,4,0,6.28);X.fill();
+    X.save();X.translate(p.x,p.y);X.rotate(da+Math.PI/2);
+    // 外发光
+    X.shadowColor=p.berserk?'#e74c3c':'#3498db';X.shadowBlur=20;
+    // 披风/外袍
+    X.fillStyle=p.berserk?'#c0392b':'#2471a3';
+    X.beginPath();X.moveTo(-p.sz*.8,-p.sz*.3);X.lineTo(-p.sz*1.1,p.sz);X.lineTo(p.sz*1.1,p.sz);X.lineTo(p.sz*.8,-p.sz*.3);X.closePath();X.fill();
+    X.beginPath();X.moveTo(-p.sz*.6,-p.sz*.3);X.lineTo(-p.sz*.8,p.sz*.8);X.lineTo(p.sz*.8,p.sz*.8);X.lineTo(p.sz*.6,-p.sz*.3);X.closePath();X.fill();
+    // 身体（铠甲）
+    X.shadowBlur=0;
+    X.beginPath();X.arc(0,0,p.sz,0,Math.PI*2);
+    const pg=X.createRadialGradient(-p.sz*.3,-p.sz*.3,0,0,0,p.sz);
+    if(p.berserk){pg.addColorStop(0,'#ff8a80');pg.addColorStop(.5,'#e74c3c');pg.addColorStop(1,'#922b21')}
+    else{pg.addColorStop(0,'#85c1e9');pg.addColorStop(.5,'#3498db');pg.addColorStop(1,'#1a5276')}
+    X.fillStyle=pg;X.fill();
+    // 胸甲
+    X.fillStyle=p.berserk?'rgba(100,0,0,.3)':'rgba(0,40,80,.3)';
+    X.beginPath();X.moveTo(-p.sz*.5,-p.sz*.2);X.lineTo(0,p.sz*.1);X.lineTo(p.sz*.5,-p.sz*.2);X.closePath();X.fill();
+    // 肩甲
+    X.fillStyle=p.berserk?'#b03a2e':'#1f618d';
+    X.beginPath();X.arc(-p.sz*.7,-p.sz*.2,p.sz*.3,0,Math.PI*2);X.fill();
+    X.beginPath();X.arc(p.sz*.7,-p.sz*.2,p.sz*.3,0,Math.PI*2);X.fill();
+    // 头盔
+    X.fillStyle=p.berserk?'#922b21':'#154360';
+    X.beginPath();X.arc(0,-p.sz*.3,p.sz*.65,Math.PI,0);X.closePath();X.fill();
+    X.fillRect(-p.sz*.65,-p.sz*.3,p.sz*1.3,p.sz*.15);
+    // 面罩
+    X.fillStyle=p.berserk?'#7b241c':'#0e2f44';
+    X.fillRect(-p.sz*.45,-p.sz*.4,p.sz*.9,p.sz*.25);
+    // 眼睛（发光）
+    const eyeC=p.berserk?'#ff6b6b':'#74b9ff';
+    X.fillStyle=eyeC;X.shadowColor=eyeC;X.shadowBlur=8;
+    X.beginPath();X.arc(-p.sz*.18,-p.sz*.32,3,0,Math.PI*2);X.fill();
+    X.beginPath();X.arc(p.sz*.18,-p.sz*.32,3,0,Math.PI*2);X.fill();
+    // 高光
+    X.shadowBlur=0;X.fillStyle='rgba(255,255,255,.6)';
+    X.beginPath();X.arc(-p.sz*.15,-p.sz*.35,1.2,0,Math.PI*2);X.fill();
+    X.beginPath();X.arc(p.sz*.21,-p.sz*.35,1.2,0,Math.PI*2);X.fill();
+    // 武器指示点
+    X.fillStyle=p.berserk?'#ff9999':'#a9d4ff';
+    X.beginPath();X.arc(0,-p.sz*.85,3,0,Math.PI*2);X.fill();
+    X.restore();
     // 环绕武器
     G.weaps.forEach(w=>{if(w.stats(w.lv).orbit){const s=w.stats(w.lv),n=s.count,t=performance.now()/1000;
       for(let i=0;i<n;i++){const a=6.28/n*i+t*2,ox=p.x+Math.cos(a)*s.range,oy=p.y+Math.sin(a)*s.range;
