@@ -133,20 +133,46 @@ if(isMobile){
 //  武器数据库
 // ============================================================
 const WDB=[
-  {id:'bullet',name:'魔力弹',icon:'\u{1F535}',desc:'向前方发射魔法弹',color:'#3498db',
+  {id:'bullet',name:'魔力弹',icon:'\u{1F535}',desc:'向前方发射魔法弹',color:'#3498db',maxLv:8,
    stats:lv=>({dmg:10+lv*3,spd:6,range:300,cd:.6-lv*.04,count:1+Math.floor(lv/3),pierce:1+Math.floor(lv/4),spread:.15})},
-  {id:'fire',name:'火焰环',icon:'\u{1F525}',desc:'环绕自身的火焰球',color:'#e74c3c',
+  {id:'fire',name:'火焰环',icon:'\u{1F525}',desc:'环绕自身的火焰球',color:'#e74c3c',maxLv:8,
    stats:lv=>({dmg:8+lv*2,spd:0,range:55+lv*10,cd:.05,count:2+Math.floor(lv/2),pierce:999,spread:0,orbit:true})},
-  {id:'lightning',name:'雷击',icon:'\u26A1',desc:'随机劈落闪电',color:'#f1c40f',
+  {id:'lightning',name:'雷击',icon:'\u26A1',desc:'随机劈落闪电',color:'#f1c40f',maxLv:8,
    stats:lv=>({dmg:15+lv*4,spd:0,range:260,cd:1.2-lv*.08,count:1+Math.floor(lv/3),pierce:1,spread:0,aoe:35+lv*5})},
-  {id:'ice',name:'冰锥',icon:'\u2744',desc:'扇形发射冰锥，减速敌人',color:'#74b9ff',
+  {id:'ice',name:'冰锥',icon:'\u2744',desc:'扇形发射冰锥，减速敌人',color:'#74b9ff',maxLv:8,
    stats:lv=>({dmg:7+lv*2,spd:7,range:260,cd:.8-lv*.05,count:3+Math.floor(lv/2),pierce:1,spread:.4,slow:.3+lv*.05})},
-  {id:'holy',name:'圣十字',icon:'\u271D',desc:'向前方发射十字光弹',color:'#ffeaa7',
+  {id:'holy',name:'圣十字',icon:'\u271D',desc:'向前方发射十字光弹',color:'#ffeaa7',maxLv:8,
    stats:lv=>({dmg:12+lv*3,spd:5,range:360,cd:1-lv*.06,count:1+Math.floor(lv/4),pierce:2+Math.floor(lv/3),spread:.08})},
-  {id:'poison',name:'毒雾',icon:'\u2620',desc:'持续释放剧毒区域',color:'#00b894',
+  {id:'poison',name:'毒雾',icon:'\u2620',desc:'持续释放剧毒区域',color:'#00b894',maxLv:8,
    stats:lv=>({dmg:4+lv*2,spd:0,range:120+lv*20,cd:.03,count:1,pierce:999,spread:0,aoe:100+lv*15,ground:true})},
+  {id:'star',name:'飞星',icon:'\u2B50',desc:'发射旋转追踪飞星',color:'#f39c12',maxLv:8,
+   stats:lv=>({dmg:9+lv*3,spd:5,range:350,cd:.5-lv*.04,count:2+Math.floor(lv/2),pierce:2+Math.floor(lv/3),spread:.3,homing:true})},
+  {id:'thunder',name:'雷霆链',icon:'\u{1F329}',desc:'闪电链弹射多个敌人',color:'#a29bfe',maxLv:8,
+   stats:lv=>({dmg:11+lv*3,spd:8,range:300,cd:.9-lv*.06,count:1+Math.floor(lv/4),pierce:3+lv,spread:.1,chain:true})},
+  {id:'tornado',name:'龙卷风',icon:'\u{1F32A}',desc:'召唤前进的龙卷风',color:'#81ecec',maxLv:8,
+   stats:lv=>({dmg:6+lv*2,spd:2,range:400,cd:1.5-lv*.1,count:1,pierce:999,spread:0,aoe:40+lv*8,push:true})},
+  {id:'meteor',name:'陨石',icon:'\u2604',desc:'随机位置坠落陨石',color:'#fdcb6e',maxLv:8,
+   stats:lv=>({dmg:20+lv*5,spd:0,range:280,cd:2-lv*.12,count:1+Math.floor(lv/3),pierce:1,spread:0,aoe:50+lv*10,fall:true})},
+  {id:'laser',name:'激光束',icon:'\u{1F534}',desc:'发射持续激光扫射',color:'#ff6b6b',maxLv:8,
+   stats:lv=>({dmg:3+lv,spd:0,range:350,cd:2.5-lv*.15,count:1,pierce:999,spread:0,aoe:20+lv*5,beam:true})},
+  {id:'shuriken',name:'手里剑',icon:'\u{1F338}',desc:'快速投掷手里剑',color:'#fd79a8',maxLv:8,
+   stats:lv=>({dmg:6+lv*2,spd:8,range:280,cd:.35-lv*.03,count:1+Math.floor(lv/3),pierce:1+Math.floor(lv/3),spread:.2,spin:true})},
 ];
 const START_WEPS=[0,1,2,3,4]; // 不含毒雾
+
+// ============================================================
+//  被动道具数据库
+// ============================================================
+const ITEMS=[
+  {id:'cloak',name:'暗影斗篷',icon:'\u{1F9E5}',desc:'受伤后短暂隐身',maxLv:3,fn:p=>{p.invBonus=(p.invBonus||0)+1.5}},
+  {id:'thorns',name:'荆棘之甲',icon:'\u{1F339}',desc:'反弹受到伤害的20%',maxLv:5,fn:p=>{p.reflect=(p.reflect||0)+.2}},
+  {id:'vampiric',name:'嗜血之刃',icon:'\u{1FA78}',desc:'击杀恢复5%最大生命',maxLv:3,fn:p=>{p.lifesteal=(p.lifesteal||0)+.05}},
+  {id:'timeWarp',name:'时间扭曲',icon:'\u23F3',desc:'所有武器冷却-10%',maxLv:5,fn:p=>{p.cdRed=(p.cdRed||0)+.1}},
+  {id:'magnet',name:'强力磁铁',icon:'\u{1F9F2}',desc:'拾取范围翻倍',maxLv:3,fn:p=>{p.mag*=(1+1)}},
+  {id:'critGem',name:'暴击宝石',icon:'\u{1F48E}',desc:'暴击伤害+50%',maxLv:3,fn:p=>{p.critDmg=(p.critDmg||0)+.5}},
+  {id:'hpRing',name:'生命之戒',icon:'\u{1F48D}',desc:'最大生命+30',maxLv:5,fn:p=>{p.mhp+=30;p.hp+=30}},
+  {id:'spdBoots',name:'疾风靴',icon:'\u{1F45F}',desc:'移动速度+20%',maxLv:3,fn:p=>{p.spd*=1.2}},
+];
 
 // ============================================================
 //  升级选项
@@ -482,13 +508,63 @@ function spawnWave(){
 //  武器开火
 // ============================================================
 function fireW(w){
-  const s=w.stats(w.lv),p=G.P,cnt=s.count+p.wBonus;
+  const s=w.stats(w.lv),p=G.P,cnt=s.count+(p.wBonus||0);
+  // 应用冷却缩减
+  let cdMul=1;if(p.cdRed)cdMul=Math.max(.2,1-p.cdRed);
   if(s.orbit)return;
+  // 毒雾地面
   if(s.ground){G.proj.push({x:p.x,y:p.y,vx:0,vy:0,dmg:s.dmg,range:s.range,aoe:s.aoe,c:w.color,life:3,pierce:s.pierce,ground:true,slow:s.slow||0,wid:w.id,sz:s.aoe/2});return}
-  if(s.aoe&&!s.spread){
+  // 雷击AOE
+  if(s.aoe&&!s.spread&&!s.fall&&!s.beam){
     const tgts=G.enemies.filter(e=>e.hp>0).sort((a,b)=>dist(a.x,a.y,p.x,p.y)-dist(b.x,b.y,p.x,p.y)).slice(0,s.count);
     tgts.forEach(t=>{G.proj.push({x:t.x,y:t.y,vx:0,vy:0,dmg:s.dmg,range:s.range,aoe:s.aoe,c:w.color,life:.3,pierce:1,aoeHit:true,slow:0,wid:w.id,sz:8});
       for(let i=0;i<8;i++)spawnP(t.x,t.y,w.color,3)});return}
+  // 飞星追踪
+  if(s.homing){
+    const tgts=G.enemies.filter(e=>e.hp>0).sort((a,b)=>dist(a.x,a.y,p.x,p.y)-dist(b.x,b.y,p.x,p.y)).slice(0,cnt);
+    tgts.forEach(t=>{const a=Math.atan2(t.y-p.y,t.x-p.x);
+      G.proj.push({x:p.x,y:p.y,vx:Math.cos(a)*s.spd,vy:Math.sin(a)*s.spd,dmg:s.dmg,range:s.range,aoe:0,c:w.color,life:3,pierce:s.pierce,slow:0,wid:w.id,sz:6,hits:new Set,homing:true})});
+    return}
+  // 陨石坠落
+  if(s.fall){
+    const tgts=G.enemies.filter(e=>e.hp>0&&dist(e.x,e.y,p.x,p.y)<s.range);
+    const targets=tgts.length>0?tgts:[];
+    for(let i=0;i<cnt;i++){
+      const tx=targets.length>0?targets[i%targets.length].x+(Math.random()-.5)*40:p.x+(Math.random()-.5)*s.range;
+      const ty=targets.length>0?targets[i%targets.length].y+(Math.random()-.5)*40:p.y+(Math.random()-.5)*s.range;
+      G.proj.push({x:tx,y:ty-500,vx:0,vy:8,dmg:s.dmg,range:s.range,aoe:s.aoe,c:w.color,life:2,pierce:s.pierce,fall:true,wid:w.id,sz:10,hits:new Set})}
+    return}
+  // 激光束
+  if(s.beam){
+    let ax=0,ay=-1,nd=Infinity;
+    G.enemies.forEach(e=>{if(e.hp<=0)return;const d=dist(e.x,e.y,p.x,p.y);if(d<nd&&d<s.range){nd=d;ax=e.x-p.x;ay=e.y-p.y}});
+    const ba=Math.atan2(ay,ax);
+    G.proj.push({x:p.x,y:p.y,vx:Math.cos(ba)*15,vy:Math.sin(ba)*15,dmg:s.dmg,range:s.range,aoe:s.aoe,c:w.color,life:1.5,pierce:999,beam:true,wid:w.id,sz:4,hits:new Set});
+    return}
+  // 龙卷风
+  if(s.push){
+    let ax=0,ay=-1;
+    G.enemies.forEach(e=>{if(e.hp<=0)return;const d=dist(e.x,e.y,p.x,p.y);if(d<s.range){ax=e.x-p.x;ay=e.y-p.y}});
+    const ta=Math.atan2(ay,ax)+(Math.random()-.5)*.5;
+    G.proj.push({x:p.x,y:p.y,vx:Math.cos(ta)*s.spd,vy:Math.sin(ta)*s.spd,dmg:s.dmg,range:s.range,aoe:s.aoe,c:w.color,life:4,pierce:s.pierce,push:true,wid:w.id,sz:s.aoe/2,hits:new Set});
+    return}
+  // 雷霆链
+  if(s.chain){
+    let ax=0,ay=-1,nd=Infinity;
+    G.enemies.forEach(e=>{if(e.hp<=0)return;const d=dist(e.x,e.y,p.x,p.y);if(d<nd&&d<s.range){nd=d;ax=e.x-p.x;ay=e.y-p.y}});
+    const ca=Math.atan2(ay,ax);
+    for(let i=0;i<cnt;i++){const sp=(Math.random()-.5)*s.spread*2,ag=ca+sp;
+      G.proj.push({x:p.x,y:p.y,vx:Math.cos(ag)*s.spd,vy:Math.sin(ag)*s.spd,dmg:s.dmg,range:s.range,aoe:30,c:w.color,life:s.range/s.spd,pierce:s.pierce,chain:true,slow:0,wid:w.id,sz:5,hits:new Set})}
+    return}
+  // 手里剑（快速旋转）
+  if(s.spin){
+    let ax2=0,ay2=-1,nd2=Infinity;
+    G.enemies.forEach(e=>{if(e.hp<=0)return;const d=dist(e.x,e.y,p.x,p.y);if(d<nd2&&d<s.range){nd2=d;ax2=e.x-p.x;ay2=e.y-p.y}});
+    const aa2=Math.atan2(ay2,ax2);
+    for(let i=0;i<cnt;i++){const sp=(Math.random()-.5)*s.spread*2,ag=aa2+sp+(cnt>1?(i/(cnt-1)-.5)*s.spread*2:0);
+      G.proj.push({x:p.x,y:p.y,vx:Math.cos(ag)*s.spd,vy:Math.sin(ag)*s.spd,dmg:s.dmg,range:s.range,aoe:0,c:w.color,life:s.range/s.spd,pierce:s.pierce,slow:0,wid:w.id,sz:6,hits:new Set,spin:true,rot:Math.random()*6.28})}
+    return}
+  // 默认投射物
   let ax=0,ay=-1,nd=Infinity;
   G.enemies.forEach(e=>{if(e.hp<=0)return;const d=dist(e.x,e.y,p.x,p.y);if(d<nd&&d<s.range){nd=d;ax=e.x-p.x;ay=e.y-p.y}});
   const aa=Math.atan2(ay,ax);
@@ -535,10 +611,13 @@ function updateUlt(dt){
 // ============================================================
 function dealDmg(e,dmg,c,slow){
   let f=dmg;if(G.P.berserk)f*=2.5;
-  if(Math.random()<G.P.crit){f*=2;spawnDN(e.x,e.y-e.sz,Math.ceil(f)+'!','#f1c40f')}
+  const critDmg=G.P.critDmg?1+G.P.critDmg:2;
+  if(Math.random()<G.P.crit){f*=critDmg;spawnDN(e.x,e.y-e.sz,Math.ceil(f)+'!','#f1c40f')}
   e.hp-=f;e.hitF=1;spawnDN(e.x,e.y-e.sz-5,Math.ceil(f),c);spawnP(e.x,e.y,c,2);
   if(slow>0)e.slowT=2;
   if(e.hp<=0){G.kills++;G.P.ultKills++;
+    // 嗜血之刃
+    if(G.P.lifesteal)G.P.hp=Math.min(G.P.mhp,G.P.hp+G.P.mhp*G.P.lifesteal);
     const xc=e.boss?10:1;
     for(let i=0;i<xc;i++){const a=Math.random()*6.28,d=Math.random()*20;
       G.pickups.push({x:e.x+Math.cos(a)*d,y:e.y+Math.sin(a)*d,type:'xp',value:Math.ceil(e.xp/xc),c:'#74b9ff',sz:5})}
@@ -558,17 +637,34 @@ function showUpgrade(){
   G.paused=true;const m=document.getElementById('upgrade-menu'),cd=document.getElementById('upCards');
   document.getElementById('upLv').textContent='等级 '+G.lv;
   let opts=[];
-  G.weaps.forEach(w=>{opts.push({icon:w.icon,name:w.name+' Lv.'+(w.lv+1),desc:'武器升级',type:'wup',wi:G.weaps.indexOf(w)})});
+  // 武器升级选项（检查是否达到最大等级）
+  G.weaps.forEach(w=>{
+    const maxL=w.maxLv||8;
+    if(w.lv<maxL){opts.push({icon:w.icon,name:w.name,desc:'升级到 Lv.'+(w.lv+1)+' / '+maxL,type:'wup',wi:G.weaps.indexOf(w)})}
+    else{opts.push({icon:w.icon,name:w.name,desc:'已达最高等级 Lv.'+maxL,type:'max',wi:G.weaps.indexOf(w)})}
+  });
+  // 新武器选项
   const avail=WDB.filter(w=>!G.weaps.find(g=>g.id===w.id));
   if(avail.length>0){const nw=avail[Math.floor(Math.random()*avail.length)];opts.push({icon:nw.icon,name:nw.name,desc:nw.desc,type:'nwep',wi:WDB.indexOf(nw)})}
-  const so=UPGRADES;
-  for(let i=0;i<3;i++){const s=so[Math.floor(Math.random()*so.length)];opts.push({...s})}
-  opts=shuffle(opts).slice(0,3);cd.innerHTML='';
+  // 被动道具选项（检查是否达到最大等级）
+  if(!G.items)G.items=[];
+  ITEMS.forEach(it=>{
+    const curLv=G.items[it.id]||0;
+    if(curLv<it.maxLv){opts.push({icon:it.icon,name:it.name,desc:it.desc+(curLv>0?' ('+curLv+'/'+it.maxLv+')':' ('+(curLv+1)+'/'+it.maxLv+')'),type:'item',itemId:it.id})}
+  });
+  // 基础升级选项
+  for(let i=0;i<3;i++){const s=UPGRADES[Math.floor(Math.random()*UPGRADES.length)];opts.push({...s})}
+  // 过滤已达上限的，混洗取3个
+  opts=shuffle(opts.filter(o=>o.type!=='max')).slice(0,3);
+  cd.innerHTML='';
   opts.forEach(o=>{const c=document.createElement('div');c.className='ucard';
-    c.innerHTML=`<div class="ui">${o.icon||'\u2B50'}</div><div class="un">${o.name}</div><div class="ud">${o.desc}</div>${o.type==='wup'?'<div class="ul">升级</div>':''}`;
+    const lvLabel=o.type==='wup'?G.weaps[o.wi].lv+'/'+(G.weaps[o.wi].maxLv||8):
+                  o.type==='item'?(G.items[o.itemId]||0)+'/'+(ITEMS.find(i=>i.id===o.itemId)?.maxLv||3):'';
+    c.innerHTML=`<div class="ui">${o.icon||'\u2B50'}</div><div class="un">${o.name}</div><div class="ud">${o.desc}</div>${lvLabel?'<div class="ul">'+lvLabel+'</div>':''}`;
     c.onclick=()=>{
       if(o.type==='nwep'){const wd=WDB[o.wi];G.weaps.push({...wd,lv:1,cd:0})}
-      else if(o.type==='wup')G.weaps[o.wi].lv++;
+      else if(o.type==='wup'){G.weaps[o.wi].lv++;if(G.weaps[o.wi].lv>=(G.weaps[o.wi].maxLv||8))G.weaps[o.wi].lv=G.weaps[o.wi].maxLv||8}
+      else if(o.type==='item'){G.items[o.itemId]=(G.items[o.itemId]||0)+1;const it=ITEMS.find(i=>i.id===o.itemId);if(it&&it.fn)it.fn(G.P)}
       else if(o.fn)o.fn(G.P);
       m.classList.remove('on');G.paused=false};
     cd.appendChild(c)});
@@ -626,19 +722,51 @@ function update(dt){
   if(isMobile){const btn=document.getElementById('ultBtn');btn.classList.toggle('ready',!!p.ultReady);btn.textContent=p.ultReady?'处刑!':'大招'}
 
   // 武器
-  G.weaps.forEach(w=>{w.cd-=dt;if(w.cd<=0){w.cd=w.stats(w.lv).cd;fireW(w)}});
+  G.weaps.forEach(w=>{w.cd-=dt;if(w.cd<=0){
+    const s=w.stats(w.lv);let cdMul=1;if(G.P.cdRed)cdMul=Math.max(.2,1-G.P.cdRed);
+    w.cd=s.cd*cdMul;fireW(w)}});
   checkOrbitHit();
 
   // 投射物
-  G.proj.forEach(pr=>{if(!pr.ground){pr.x+=pr.vx;pr.y+=pr.vy}pr.life-=dt});
+  G.proj.forEach(pr=>{
+    if(pr.homing&&pr.vx!==0){
+      // 追踪最近敌人
+      let best=null,bestD=Infinity;
+      G.enemies.forEach(e=>{if(e.hp<=0)return;const d=dist(e.x,e.y,pr.x,pr.y);if(d<bestD&&d<200){bestD=d;best=e}});
+      if(best){const ta=Math.atan2(best.y-pr.y,best.x-pr.x);const sp=.15;
+        const ca=Math.atan2(pr.vy,pr.vx);let diff=ta-ca;while(diff>Math.PI)diff-=6.28;while(diff<-Math.PI)diff+=6.28;
+        const na=ca+diff*sp;const spd=Math.sqrt(pr.vx*pr.vx+pr.vy*pr.vy);pr.vx=Math.cos(na)*spd;pr.vy=Math.sin(na)*spd}}
+    if(!pr.ground&&!pr.fall){pr.x+=pr.vx;pr.y+=pr.vy}
+    if(pr.fall&&pr.vy>0){pr.y+=pr.vy;pr.vy+=.3}
+    pr.life-=dt});
   G.proj=G.proj.filter(pr=>pr.life>0);
 
   // 投射物-敌人碰撞
   G.proj.forEach(pr=>{
     if(pr.ground){G.enemies.forEach(e=>{if(e.hp<=0||pr.hits&&pr.hits.has(e))return;
       if(dist(pr.x,pr.y,e.x,e.y)<e.sz+(pr.aoe||pr.sz)){dealDmg(e,pr.dmg,pr.c,pr.slow);if(pr.hits)pr.hits.add(e)}});return}
+    if(pr.beam){G.enemies.forEach(e=>{if(e.hp<=0||pr.hits&&pr.hits.has(e))return;
+      if(dist(pr.x,pr.y,e.x,e.y)<e.sz+(pr.aoe||pr.sz)){dealDmg(e,pr.dmg*5,pr.c,0);if(pr.hits)pr.hits.add(e)}});return}
+    if(pr.push){G.enemies.forEach(e=>{if(e.hp<=0||pr.hits&&pr.hits.has(e))return;
+      if(dist(pr.x,pr.y,e.x,e.y)<e.sz+(pr.sz||30)){
+        dealDmg(e,pr.dmg,pr.c,0);if(pr.hits)pr.hits.add(e);
+        const px=(e.x-pr.x),py=(e.y-pr.y),pd=Math.sqrt(px*px+py*py)||1;
+        e.x+=px/pd*5;e.y+=py/pd*5}});return}
+    if(pr.fall){G.enemies.forEach(e=>{if(e.hp<=0||pr.hits&&pr.hits.has(e))return;
+      if(dist(pr.x,pr.y,e.x,e.y)<e.sz+(pr.aoe||pr.sz)){dealDmg(e,pr.dmg,pr.c,0);if(pr.hits)pr.hits.add(e);
+        for(let i=0;i<12;i++)spawnP(e.x,e.y,pr.c,3)}});return}
+    if(pr.chain){
+      G.enemies.forEach(e=>{if(e.hp<=0||pr.hits&&pr.hits.has(e))return;
+        if(dist(pr.x,pr.y,e.x,e.y)<e.sz+(pr.sz||5)){
+          dealDmg(e,pr.dmg,pr.c,0);if(pr.hits)pr.hits.add(e);
+          // 弹射到附近敌人
+          const nearby=G.enemies.filter(n=>n.hp>0&&!pr.hits.has(n)&&dist(n.x,n.y,e.x,e.y)<150).sort((a,b)=>dist(a.x,a.y,e.x,e.y)-dist(b.x,b.y,e.x,e.y)).slice(0,3);
+          nearby.forEach(n=>{dealDmg(n,pr.dmg*.7,pr.c,0);if(pr.hits)pr.hits.add(n);spawnP(n.x,n.y,pr.c,5)});
+          for(let i=0;i<8;i++)spawnP(e.x,e.y,pr.c,3);pr.pierce--;if(pr.pierce<=0)pr.life=0}});return}
     G.enemies.forEach(e=>{if(e.hp<=0||pr.hits&&pr.hits.has(e))return;
-      if(dist(pr.x,pr.y,e.x,e.y)<e.sz+(pr.sz||5)){dealDmg(e,pr.dmg,pr.c,pr.slow);if(pr.hits)pr.hits.add(e);pr.pierce--;if(pr.pierce<=0)pr.life=0}})
+      if(dist(pr.x,pr.y,e.x,e.y)<e.sz+(pr.sz||5)){dealDmg(e,pr.dmg,pr.c,pr.slow);if(pr.hits)pr.hits.add(e);
+        if(pr.spin){for(let i=0;i<3;i++)spawnP(e.x,e.y,pr.c,2)}
+        pr.pierce--;if(pr.pierce<=0)pr.life=0}})
   });
 
   // 敌人移动和攻击
@@ -651,7 +779,10 @@ function update(dt){
     if(e.shoots){e.shootT-=dt;if(e.shootT<=0){e.shootT=e.shootCd;const a=Math.atan2(dy,dx);
       G.proj.push({x:e.x,y:e.y,vx:Math.cos(a)*4,vy:Math.sin(a)*4,dmg:e.dmg*.5,range:400,c:'#ff0',life:2,pierce:1,eProj:true,sz:4})}}
     if(d<p.sz+e.sz&&p.inv<=0){
-      const dmg=e.dmg*(1-p.arm);p.hp-=Math.max(1,dmg);p.inv=.5;
+      const dmg=e.dmg*(1-p.arm);p.hp-=Math.max(1,dmg);
+      // 荆棘之甲反弹
+      if(p.reflect){e.hp-=dmg*p.reflect;spawnDN(e.x,e.y-e.sz,Math.ceil(dmg*p.reflect),'#f39c12')}
+      p.inv=p.invBonus||.5;
       spawnDN(p.x,p.y-e.sz,Math.ceil(Math.max(1,dmg)),'#e74c3c');spawnP(p.x,p.y,'#e74c3c',5);
       if(p.hp<=0)playerDie()}
   });
@@ -710,6 +841,47 @@ function render(){
       for(let i=0;i<3;i++){const bx=pr.x+Math.cos(t*2+i*2.1)*pr.sz*.5,by=pr.y+Math.sin(t*2+i*2.1)*pr.sz*.5;
         X.beginPath();X.arc(bx,by,4,0,6.28);X.fillStyle=`rgba(0,255,200,${.5*vis})`;X.fill()}
       return}
+    if(pr.fall){
+      // 陨石：大火球带尾迹
+      X.beginPath();X.arc(pr.x,pr.y,pr.sz,0,6.28);X.fillStyle=pr.c;X.shadowColor=pr.c;X.shadowBlur=20;X.fill();
+      X.beginPath();X.arc(pr.x,pr.y,pr.sz*.6,0,6.28);X.fillStyle='#ff6b6b';X.fill();
+      X.beginPath();X.arc(pr.x,pr.y,pr.sz*.3,0,6.28);X.fillStyle='#fff';X.fill();X.shadowBlur=0;
+      // 尾迹
+      X.fillStyle=`rgba(253,203,110,.2)`;X.beginPath();X.arc(pr.x,pr.y-pr.sz*1.5,pr.sz*.8,0,6.28);X.fill();
+      return}
+    if(pr.beam){
+      // 激光：细长光束
+      X.save();X.translate(pr.x,pr.y);
+      X.fillStyle=pr.c;X.shadowColor=pr.c;X.shadowBlur=15;
+      X.fillRect(-pr.sz*3,-pr.sz/2,pr.sz*6,pr.sz);
+      X.fillStyle='#fff';X.fillRect(-pr.sz*2,-pr.sz/4,pr.sz*4,pr.sz/2);
+      X.shadowBlur=0;X.restore();return}
+    if(pr.push){
+      // 龙卷风：旋转气流
+      const t=performance.now()/500;
+      X.beginPath();X.arc(pr.x,pr.y,pr.sz,0,6.28);X.fillStyle=`rgba(129,236,236,.15)`;X.fill();
+      X.strokeStyle=`rgba(129,236,236,.5)`;X.lineWidth=2;X.stroke();
+      for(let i=0;i<4;i++){const a=t+i*1.5,r=pr.sz*.6;
+        X.beginPath();X.arc(pr.x+Math.cos(a)*r,pr.y+Math.sin(a)*r,3,0,6.28);X.fillStyle=`rgba(129,236,236,.6)`;X.fill()}
+      return}
+    if(pr.spin){
+      // 手里剑：旋转星形
+      X.save();X.translate(pr.x,pr.y);X.rotate(pr.rot||0);
+      X.fillStyle=pr.c;X.shadowColor=pr.c;X.shadowBlur=8;
+      X.beginPath();for(let i=0;i<4;i++){const a=Math.PI/4*i*Math.PI/2;X.lineTo(Math.cos(a)*pr.sz,Math.sin(a)*pr.sz);X.lineTo(Math.cos(a+Math.PI/4)*pr.sz*.4,Math.sin(a+Math.PI/4)*pr.sz*.4)}
+      X.closePath();X.fill();X.shadowBlur=0;X.restore();
+      if(pr.rot!==undefined)pr.rot+=.3;return}
+    if(pr.homing){
+      // 飞星：带尾迹
+      X.beginPath();X.arc(pr.x,pr.y,pr.sz,0,6.28);X.fillStyle=pr.c;X.shadowColor=pr.c;X.shadowBlur=10;X.fill();
+      X.beginPath();X.arc(pr.x-pr.vx*2,pr.y-pr.vy*2,pr.sz*.5,0,6.28);X.fillStyle=pr.c+'88';X.fill();X.shadowBlur=0;
+      return}
+    if(pr.chain){
+      // 闪电链：紫色电弧
+      X.beginPath();X.arc(pr.x,pr.y,pr.sz,0,6.28);X.fillStyle=pr.c;X.shadowColor=pr.c;X.shadowBlur=12;X.fill();
+      X.beginPath();X.arc(pr.x,pr.y,pr.sz*.4,0,6.28);X.fillStyle='#fff';X.fill();X.shadowBlur=0;
+      return}
+    // 默认投射物
     X.beginPath();X.arc(pr.x,pr.y,pr.sz||5,0,6.28);X.fillStyle=pr.c;X.shadowColor=pr.c;X.shadowBlur=10;X.fill();X.shadowBlur=0
   });
 
@@ -1056,13 +1228,19 @@ function updateHUD(){
   document.getElementById('hudTime').textContent=fmtTime(G.time);
   document.getElementById('hudLv').textContent='Lv.'+G.lv;
   document.getElementById('hudKills').textContent='击杀: '+G.kills;
-  document.getElementById('hudWep').textContent='武器: '+G.weaps.map(w=>w.icon).join(' ');
-  document.getElementById('hudUlt').textContent='大招: '+p.ultCharge+'/'+p.ultMax+(p.ultReady?' \u2713':'');
+  document.getElementById('hudWep').textContent='武器: '+G.weaps.map(w=>{
+    const maxL=w.maxLv||8;return w.icon+(w.lv>=maxL?'':'.'+w.lv)}).join(' ');
+  document.getElementById('hudUlt').textContent='大招: '+p.ultCharge+'/'+p.ultMax+(p.ultReady?' ✓':'');
   document.getElementById('hudUlt').style.color=p.ultReady?'#2ecc71':'#f1c40f';
   const b=document.getElementById('hudBerserk');
   if(p.berserk){b.style.display='block';b.textContent='狂暴: '+Math.ceil(p.berserkT)+'s'}
   else if(p.berserkCD>0){b.style.display='block';b.textContent='狂暴CD: '+Math.ceil(p.berserkCD)+'s'}
-  else b.style.display='none'
+  else b.style.display='none';
+  // 显示道具
+  let itemStr='';
+  if(G.items)for(const[id,lv]of Object.entries(G.items)){
+    if(lv>0){const it=ITEMS.find(i=>i.id===id);if(it)itemStr+=it.icon+lv+' '}}
+  if(itemStr)document.getElementById('hudKills').textContent='击杀: '+G.kills+' | 道具: '+itemStr.trim()
 }
 
 // ============================================================
@@ -1082,7 +1260,7 @@ function resetGame(){
   G.enemies=[];G.proj=[];G.pickups=[];G.parts=[];G.dnums=[];
   G.spawnT=0;G.bossT=0;G.diff=1;G.P=mkPlayer();
   const wi=START_WEPS[Math.floor(Math.random()*START_WEPS.length)];
-  G.weaps=[{...WDB[wi],lv:1,cd:0}];genMap();updateHUD()
+  G.weaps=[{...WDB[wi],lv:1,cd:0}];G.items={};genMap();updateHUD()
 }
 function playerDie(){
   G.on=false;
