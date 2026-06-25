@@ -424,7 +424,201 @@ const EDEF={
       // 肩甲
       c.fillStyle='#d68910';c.fillRect(e.x-e.sz*.85,e.y-e.sz*.2,e.sz*.35,e.sz*.35);
       c.fillRect(e.x+e.sz*.5,e.y-e.sz*.2,e.sz*.35,e.sz*.35)
-    }}
+    }},
+  // === 更多敌人 ===
+  // 自爆怪 - 蓝色球形带裂缝 (75s后出现)
+  bomber:{hp:12,spd:3,sz:11,color:'#0984e3',xp:8,dmg:30,bomber:true,
+    draw:(c,e)=>{
+      c.save();c.translate(e.x,e.y);
+      const t=performance.now()/500;
+      // 发光球体
+      c.beginPath();c.arc(0,0,e.sz,0,Math.PI*2);
+      const bg=c.createRadialGradient(0,0,0,0,0,e.sz);bg.addColorStop(0,'#74b9ff');bg.addColorStop(.7,'#0984e3');bg.addColorStop(1,'#0652DD');c.fillStyle=bg;c.fill();
+      // 闪烁裂缝（快爆了）
+      c.strokeStyle=`rgba(255,255,255,${.3+Math.sin(t*3)*.3})`;c.lineWidth=1.5;
+      c.beginPath();c.moveTo(-e.sz*.3,-e.sz*.5);c.lineTo(0,0);c.lineTo(e.sz*.4,-e.sz*.3);c.stroke();
+      c.beginPath();c.moveTo(-e.sz*.2,e.sz*.4);c.lineTo(e.sz*.1,e.sz*.1);c.lineTo(e.sz*.3,e.sz*.5);c.stroke();
+      // 核心脉冲
+      c.fillStyle=`rgba(255,100,100,${.2+Math.sin(t*5)*.15})`;c.beginPath();c.arc(0,0,e.sz*.4,0,Math.PI*2);c.fill();
+      // 警告眼睛
+      c.fillStyle='#fff';c.beginPath();c.arc(-e.sz*.25,-e.sz*.1,2.5,0,Math.PI*2);c.fill();
+      c.beginPath();c.arc(e.sz*.25,-e.sz*.1,2.5,0,Math.PI*2);c.fill();
+      c.restore()
+    }},
+  // 治疗者 - 粉色祭司 (100s后出现)
+  healer:{hp:35,spd:1,sz:14,color:'#e84393',xp:10,dmg:6,heals:true,healCd:5,healT:0,
+    draw:(c,e)=>{
+      c.save();c.translate(e.x,e.y);
+      const t=performance.now()/1000;
+      // 长袍
+      c.fillStyle='#a855f7';c.beginPath();c.moveTo(-e.sz*.5,-e.sz*.3);c.lineTo(-e.sz*.8,e.sz);c.lineTo(e.sz*.8,e.sz);c.lineTo(e.sz*.5,-e.sz*.3);c.closePath();c.fill();
+      // 头部
+      c.beginPath();c.arc(0,-e.sz*.5,e.sz*.55,0,Math.PI*2);
+      const hg=c.createRadialGradient(-2,-e.sz*.6,0,0,-e.sz*.5,e.sz*.55);hg.addColorStop(0,'#f8a5c2');hg.addColorStop(1,'#e84393');c.fillStyle=hg;c.fill();
+      // 兜帽
+      c.fillStyle='#6c3483';c.beginPath();c.arc(0,-e.sz*.55,e.sz*.6,Math.PI*1.1,Math.PI*1.9);c.closePath();c.fill();
+      // 法杖
+      c.strokeStyle='#b7950b';c.lineWidth=2;c.beginPath();c.moveTo(e.sz*.6,-e.sz);c.lineTo(e.sz*.6,e.sz*.8);c.stroke();
+      // 法杖顶端发光
+      c.fillStyle='#f39c12';c.shadowColor='#f39c12';c.shadowBlur=8;
+      c.beginPath();c.arc(e.sz*.6,-e.sz,4,0,Math.PI*2);c.fill();c.shadowBlur=0;
+      // 治愈光环
+      c.strokeStyle=`rgba(248,165,194,${.2+Math.sin(t*2)*.1})`;c.lineWidth=1.5;
+      c.beginPath();c.arc(0,0,e.sz+6+Math.sin(t)*2,0,Math.PI*2);c.stroke();
+      // 眼睛
+      c.fillStyle='#fff';c.beginPath();c.arc(-e.sz*.2,-e.sz*.5,2.5,0,Math.PI*2);c.fill();
+      c.beginPath();c.arc(e.sz*.2,-e.sz*.5,2.5,0,Math.PI*2);c.fill();
+      c.restore()
+    }},
+  // 隐形怪 - 半透明变色龙 (50s后出现)
+  stalker:{hp:22,spd:2.5,sz:12,color:'rgba(100,200,150,.3)',xp:6,dmg:16,invisible:true,
+    draw:(c,e)=>{
+      c.save();c.translate(e.x,e.y);
+      const alpha=.15+Math.sin(performance.now()/400)*.1;
+      c.globalAlpha=alpha;
+      // 身体
+      c.beginPath();c.ellipse(0,0,e.sz*.8,e.sz*.5,0,0,Math.PI*2);
+      const sg=c.createLinearGradient(-e.sz,0,e.sz,0);sg.addColorStop(0,'rgba(100,200,150,.5)');sg.addColorStop(1,'rgba(50,150,100,.5)');c.fillStyle=sg;c.fill();
+      // 头部
+      c.beginPath();c.arc(e.sz*.6,0,e.sz*.35,0,Math.PI*2);c.fillStyle='rgba(80,180,130,.5)';c.fill();
+      // 眼睛（可见度高）
+      c.globalAlpha=.6;c.fillStyle='#e74c3c';
+      c.beginPath();c.arc(e.sz*.7,-e.sz*.15,2.5,0,Math.PI*2);c.fill();
+      c.beginPath();c.arc(e.sz*.7,e.sz*.15,2.5,0,Math.PI*2);c.fill();
+      // 尾巴
+      c.globalAlpha=alpha*.5;c.strokeStyle='rgba(100,200,150,.5)';c.lineWidth=2;
+      c.beginPath();c.moveTo(-e.sz*.8,0);c.quadraticCurveTo(-e.sz*1.2,Math.sin(performance.now()/300)*5,-e.sz*1.5,Math.sin(performance.now()/300)*8);c.stroke();
+      c.restore()
+    }},
+  // 召唤师 - 黑色法袍 (120s后出现)
+  summoner:{hp:45,spd:.9,sz:16,color:'#2d3436',xp:20,dmg:12,summons:true,summonCd:12,summonT:0,
+    draw:(c,e)=>{
+      c.save();c.translate(e.x,e.y);
+      const t=performance.now()/1000;
+      // 法袍
+      c.fillStyle='#1a1a2e';c.beginPath();c.moveTo(-e.sz*.6,-e.sz*.4);c.lineTo(-e.sz,e.sz);c.lineTo(e.sz,e.sz);c.lineTo(e.sz*.6,-e.sz*.4);c.closePath();c.fill();
+      // 兜帽
+      c.beginPath();c.arc(0,-e.sz*.6,e.sz*.65,0,Math.PI*2);
+      const hg=c.createRadialGradient(0,-e.sz*.65,0,0,-e.sz*.6,e.sz*.65);hg.addColorStop(0,'#4a4a6a');hg.addColorStop(1,'#1a1a2e');c.fillStyle=hg;c.fill();
+      // 空洞
+      c.fillStyle='#000';c.beginPath();c.ellipse(0,-e.sz*.55,e.sz*.25,e.sz*.3,0,0,Math.PI*2);c.fill();
+      // 紫色眼睛
+      c.fillStyle='#a855f7';c.shadowColor='#a855f7';c.shadowBlur=6;
+      c.beginPath();c.arc(-e.sz*.12,-e.sz*.58,2.5,0,Math.PI*2);c.fill();
+      c.beginPath();c.arc(e.sz*.12,-e.sz*.58,2.5,0,Math.PI*2);c.fill();c.shadowBlur=0;
+      // 召唤符文
+      c.strokeStyle=`rgba(168,85,247,${.3+Math.sin(t*3)*.15})`;c.lineWidth=1.5;
+      c.beginPath();c.arc(0,e.sz*.3,e.sz*.4+Math.sin(t*2)*2,0,Math.PI*2);c.stroke();
+      c.beginPath();c.moveTo(-e.sz*.3,e.sz*.3);c.lineTo(e.sz*.3,e.sz*.3);c.stroke();
+      c.beginPath();c.moveTo(0,e.sz);c.lineTo(0,e.sz*.1);c.stroke();
+      c.restore()
+    }},
+  // 冰霜怪 - 蓝色结晶 (80s后出现)
+  frost:{hp:30,spd:1.2,sz:13,color:'#74b9ff',xp:7,dmg:10,freezes:true,
+    draw:(c,e)=>{
+      c.save();c.translate(e.x,e.y);
+      const t=performance.now()/1000;
+      // 冰晶外壳
+      c.beginPath();for(let i=0;i<6;i++){const a=Math.PI/3*i;c.lineTo(e.sz*Math.cos(a),e.sz*Math.sin(a))}
+      c.closePath();const fg=c.createRadialGradient(0,0,0,0,0,e.sz);fg.addColorStop(0,'#dfe6e9');fg.addColorStop(.5,'#74b9ff');fg.addColorStop(1,'#0984e3');c.fillStyle=fg;c.fill();
+      // 冰霜效果
+      c.strokeStyle='rgba(255,255,255,.3)';c.lineWidth=1;
+      for(let i=0;i<4;i++){const a=Math.PI/2*i+t*.5;
+        c.beginPath();c.moveTo(Math.cos(a)*e.sz*.3,Math.sin(a)*e.sz*.3);c.lineTo(Math.cos(a)*e.sz,Math.sin(a)*e.sz);c.stroke()}
+      // 核心
+      c.fillStyle='rgba(116,185,255,.5)';c.beginPath();c.arc(0,0,e.sz*.35,0,Math.PI*2);c.fill();
+      // 眼睛
+      c.fillStyle='#fff';c.beginPath();c.arc(-e.sz*.2,-e.sz*.15,2.5,0,Math.PI*2);c.fill();
+      c.beginPath();c.arc(e.sz*.2,-e.sz*.15,2.5,0,Math.PI*2);c.fill();
+      c.restore()
+    }},
+  // 暗影恶魔 - 黑红混合 (140s后出现)
+  demon:{hp:55,spd:2,sz:17,color:'#6c5ce7',xp:12,dmg:18,
+    draw:(c,e)=>{
+      c.save();c.translate(e.x,e.y);
+      const t=performance.now()/1000;
+      // 翅膀
+      c.fillStyle='rgba(45,52,54,.6)';
+      c.beginPath();c.moveTo(-e.sz*.3,-e.sz*.2);c.quadraticCurveTo(-e.sz*1.3,-e.sz, -e.sz*.8,-e.sz*.5);c.quadraticCurveTo(-e.sz*.5,-e.sz*.3,-e.sz*.3,-e.sz*.2);c.fill();
+      c.beginPath();c.moveTo(e.sz*.3,-e.sz*.2);c.quadraticCurveTo(e.sz*1.3,-e.sz, e.sz*.8,-e.sz*.5);c.quadraticCurveTo(e.sz*.5,-e.sz*.3,e.sz*.3,-e.sz*.2);c.fill();
+      // 身体
+      c.beginPath();c.arc(0,0,e.sz,0,Math.PI*2);
+      const dg=c.createRadialGradient(-e.sz*.3,-e.sz*.3,0,0,0,e.sz);dg.addColorStop(0,'#a29bfe');dg.addColorStop(.5,'#6c5ce7');dg.addColorStop(1,'#2d1b69');c.fillStyle=dg;c.fill();
+      // 角
+      c.fillStyle='#e74c3c';
+      c.beginPath();c.moveTo(-e.sz*.4,-e.sz*.7);c.lineTo(-e.sz*.3,-e.sz*1.3);c.lineTo(-e.sz*.15,-e.sz*.7);c.closePath();c.fill();
+      c.beginPath();c.moveTo(e.sz*.4,-e.sz*.7);c.lineTo(e.sz*.3,-e.sz*1.3);c.lineTo(e.sz*.15,-e.sz*.7);c.closePath();c.fill();
+      // 火焰眼睛
+      c.fillStyle='#ff6b6b';c.shadowColor='#ff6b6b';c.shadowBlur=8;
+      c.beginPath();c.arc(-e.sz*.25,-e.sz*.1,3,0,Math.PI*2);c.fill();
+      c.beginPath();c.arc(e.sz*.25,-e.sz*.1,3,0,Math.PI*2);c.fill();c.shadowBlur=0;
+      // 邪恶笑容
+      c.strokeStyle='#ff6b6b';c.lineWidth=2;c.beginPath();c.arc(0,e.sz*.3,e.sz*.35,.15*Math.PI,.85*Math.PI);c.stroke();
+      c.restore()
+    }},
+  // 石像鬼 - 灰色石质 (100s后出现，移动慢但超硬)
+  golem:{hp:120,spd:.5,sz:25,color:'#636e72',xp:18,dmg:22,
+    draw:(c,e)=>{
+      c.save();c.translate(e.x,e.y);
+      const t=performance.now()/1000;
+      // 主体岩石
+      c.beginPath();c.arc(0,0,e.sz,0,Math.PI*2);
+      const gg=c.createRadialGradient(-e.sz*.3,-e.sz*.3,0,0,0,e.sz);gg.addColorStop(0,'#b2bec3');gg.addColorStop(.5,'#636e72');gg.addColorStop(1,'#2d3436');c.fillStyle=gg;c.fill();
+      // 岩石纹理
+      c.strokeStyle='rgba(0,0,0,.15)';c.lineWidth=2;
+      c.beginPath();c.moveTo(-e.sz*.5,-e.sz*.3);c.lineTo(0,0);c.lineTo(e.sz*.5,-e.sz*.2);c.stroke();
+      c.beginPath();c.moveTo(-e.sz*.3,e.sz*.4);c.lineTo(e.sz*.2,e.sz*.1);c.stroke();
+      // 符文眼睛（紫色发光）
+      c.fillStyle='#a855f7';c.shadowColor='#a855f7';c.shadowBlur=10;
+      c.beginPath();c.arc(-e.sz*.25,-e.sz*.2,4,0,Math.PI*2);c.fill();
+      c.beginPath();c.arc(e.sz*.25,-e.sz*.2,4,0,Math.PI*2);c.fill();c.shadowBlur=0;
+      // 嘴巴
+      c.fillStyle='rgba(0,0,0,.3)';c.fillRect(-e.sz*.3,e.sz*.2,e.sz*.6,e.sz*.15);
+      // 石头颗粒掉落
+      c.fillStyle='rgba(99,110,114,.3)';
+      for(let i=0;i<3;i++){const px=-e.sz+Math.random()*e.sz*2,py=e.sz+Math.sin(t*3+i)*2;
+        c.fillRect(px,py,2,2)}
+      c.restore()
+    }},
+  // 蝙蝠群 - 快速小群 (40s后出现)
+  bat:{hp:5,spd:3.5,sz:8,color:'#a29bfe',xp:1,dmg:4,swarm:true,
+    draw:(c,e)=>{
+      c.save();c.translate(e.x,e.y);
+      const t=performance.now()/200;
+      // 蝙蝠身体
+      c.fillStyle='#6c5ce7';c.beginPath();c.ellipse(0,0,e.sz*.5,e.sz*.35,0,0,Math.PI*2);c.fill();
+      // 翅膀（拍动）
+      const wingAngle=Math.sin(t)*.5;
+      c.fillStyle='rgba(108,92,231,.6)';
+      c.save();c.rotate(-wingAngle);c.beginPath();c.moveTo(-e.sz*.3,0);c.quadraticCurveTo(-e.sz,-e.sz*.5,-e.sz*.8,e.sz*.2);c.lineTo(-e.sz*.3,e.sz*.1);c.closePath();c.fill();c.restore();
+      c.save();c.rotate(wingAngle);c.beginPath();c.moveTo(e.sz*.3,0);c.quadraticCurveTo(e.sz,-e.sz*.5,e.sz*.8,e.sz*.2);c.lineTo(e.sz*.3,e.sz*.1);c.closePath();c.fill();c.restore();
+      // 小眼睛
+      c.fillStyle='#ff6b6b';c.beginPath();c.arc(-e.sz*.15,-e.sz*.1,1.5,0,Math.PI*2);c.fill();
+      c.beginPath();c.arc(e.sz*.15,-e.sz*.1,1.5,0,Math.PI*2);c.fill();
+      c.restore()
+    }},
+  // 毒液怪 - 绿色液滴 (90s后出现，留下毒液区域)
+  ooze:{hp:40,spd:.7,sz:18,color:'#00b894',xp:8,dmg:8,leavesPoison:true,
+    draw:(c,e)=>{
+      c.save();c.translate(e.x,e.y);
+      const t=performance.now()/500;
+      // 液滴主体
+      c.beginPath();c.ellipse(0,e.sz*.2,e.sz,e.sz*.7,0,0,Math.PI*2);
+      const og=c.createRadialGradient(0,-e.sz*.3,0,0,e.sz*.2,e.sz);og.addColorStop(0,'#55efc4');og.addColorStop(.5,'#00b894');og.addColorStop(1,'#00664d');c.fillStyle=og;c.fill();
+      // 冒泡
+      for(let i=0;i<4;i++){const bx=-e.sz*.4+i*e.sz*.3,by=-e.sz*.2+Math.sin(t+i*1.5)*3;
+        c.fillStyle='rgba(85,239,196,.3)';c.beginPath();c.arc(bx,by,3+Math.sin(t+i)*1.5,0,Math.PI*2);c.fill()}
+      // 眼睛
+      c.fillStyle='#fff';c.beginPath();c.arc(-e.sz*.25,-e.sz*.1,3.5,0,Math.PI*2);c.fill();
+      c.beginPath();c.arc(e.sz*.25,-e.sz*.1,3.5,0,Math.PI*2);c.fill();
+      c.fillStyle='#000';c.beginPath();c.arc(-e.sz*.2,-e.sz*.08,2,0,Math.PI*2);c.fill();
+      c.beginPath();c.arc(e.sz*.3,-e.sz*.08,2,0,Math.PI*2);c.fill();
+      // 滴落的黏液
+      c.fillStyle='rgba(0,184,148,.4)';
+      for(let i=0;i<2;i++){const dx=(i===0?-e.sz*.3:e.sz*.3),dy=e.sz*.7+Math.sin(t*2+i)*2;
+        c.beginPath();c.ellipse(dx,dy,2,4,0,0,Math.PI*2);c.fill()}
+      c.restore()
+    }},
 };
 
 // ============================================================
@@ -478,7 +672,8 @@ function drawHP(x,y,w,h,hp,mhp){const p=Math.max(0,hp/mhp);X.fillStyle='rgba(0,0
 //  玩家
 // ============================================================
 function mkPlayer(){return{x:0,y:0,hp:100,mhp:100,spd:3.5,arm:0,reg:0,crit:.05,mag:80,wBonus:0,inv:0,sz:16,vx:0,vy:0,trail:[],
-  berserk:false,berserkT:0,berserkCD:0,ultKills:0,ultReady:false,ultCharge:0,ultMax:50,ultAnim:null}}
+  berserk:false,berserkT:0,berserkCD:0,ultKills:0,ultReady:false,ultCharge:0,ultMax:50,ultAnim:null,
+  invBonus:0,reflect:0,lifesteal:0,cdRed:0,critDmg:0,slowT:0,slowF:1}}
 
 // ============================================================
 //  敌人生成
@@ -494,13 +689,22 @@ function spawnWave(){
   const n=Math.floor(3+G.time/15*G.diff);
   for(let i=0;i<n;i++){const r=Math.random();let t='basic';
     if(G.time>15&&r<.15)t='slime';
-    if(G.time>30&&r<.2)t='skeleton';
-    if(G.time>45&&r<.25)t='ghost';
-    if(G.time>60&&r<.2)t='fast';
-    if(G.time>60&&r<.15)t='spider';
-    if(G.time>120&&r<.12)t='tank';
-    if(G.time>90&&r<.08)t='shooter';
-    if(G.time>150&&r<.06)t='elite';
+    if(G.time>30&&r<.18)t='skeleton';
+    if(G.time>40&&r<.12)t='bat';
+    if(G.time>45&&r<.18)t='ghost';
+    if(G.time>50&&r<.1)t='stalker';
+    if(G.time>60&&r<.15)t='fast';
+    if(G.time>60&&r<.12)t='spider';
+    if(G.time>75&&r<.1)t='bomber';
+    if(G.time>80&&r<.1)t='frost';
+    if(G.time>90&&r<.08)t='ooze';
+    if(G.time>90&&r<.06)t='shooter';
+    if(G.time>100&&r<.08)t='healer';
+    if(G.time>100&&r<.06)t='golem';
+    if(G.time>120&&r<.08)t='summoner';
+    if(G.time>120&&r<.06)t='tank';
+    if(G.time>140&&r<.06)t='demon';
+    if(G.time>150&&r<.05)t='elite';
     spawnE(t)}
 }
 
@@ -686,7 +890,9 @@ function update(dt){
   if(keys['w']||keys['arrowup'])my=-1;if(keys['s']||keys['arrowdown'])my=1;
   if(keys['a']||keys['arrowleft'])mx=-1;if(keys['d']||keys['arrowright'])mx=1;
   if(joyActive){mx=joyX;my=joyY}
-  if(mx||my){const l=Math.sqrt(mx*mx+my*my);mx/=l;my/=l;p.x+=mx*p.spd;p.y+=my*p.spd;
+  if(mx||my){const l=Math.sqrt(mx*mx+my*my);mx/=l;my/=l;
+    let spdMul=p.slowT>0?.3:1;if(p.slowT>0)p.slowT-=dt;
+    p.x+=mx*p.spd*spdMul;p.y+=my*p.spd*spdMul;
     p.trail.push({x:p.x,y:p.y,a:1});if(p.trail.length>15)p.trail.shift()}
   p.trail.forEach(t=>t.a-=dt*2);p.trail=p.trail.filter(t=>t.a>0);
   if(p.inv>0)p.inv-=dt;if(p.reg>0)p.hp=Math.min(p.mhp,p.hp+p.reg*dt);
@@ -776,12 +982,32 @@ function update(dt){
     if(e.hitF>0)e.hitF-=dt*5;
     const dx=p.x-e.x,dy=p.y-e.y,d=Math.sqrt(dx*dx+dy*dy);
     if(d>0){e.x+=(dx/d)*e.spd*e.slowF;e.y+=(dy/d)*e.spd*e.slowF}
+    // 射手
     if(e.shoots){e.shootT-=dt;if(e.shootT<=0){e.shootT=e.shootCd;const a=Math.atan2(dy,dx);
       G.proj.push({x:e.x,y:e.y,vx:Math.cos(a)*4,vy:Math.sin(a)*4,dmg:e.dmg*.5,range:400,c:'#ff0',life:2,pierce:1,eProj:true,sz:4})}}
+    // 治疗者
+    if(e.heals){e.healT-=dt;if(e.healT<=0){e.healT=e.healCd;
+      G.enemies.forEach(n=>{if(n.hp<=0||n===e)return;if(dist(n.x,n.y,e.x,e.y)<150){n.hp=Math.min(n.mhp,n.hp+n.mhp*.2);spawnP(n.x,n.y,'#f8a5c2',3)}})}}
+    // 召唤师
+    if(e.summons){e.summonT-=dt;if(e.summonT<=0){e.summonT=e.summonCd;
+      for(let i=0;i<2;i++){const a=Math.random()*6.28;spawnE('bat',e.x+Math.cos(a)*30,e.y+Math.sin(a)*30)}spawnP(e.x,e.y,'#a855f7',8)}}
+    // 自爆怪
+    if(e.bomber&&d<e.sz+p.sz+5){
+      // 爆炸
+      G.enemies.forEach(n=>{if(n.hp<=0||n===e)return;if(dist(n.x,n.y,e.x,e.y)<80){dealDmg(n,e.dmg,'#0984e3',0)}});
+      if(d<p.sz+e.sz+5&&p.inv<=0){const dmg=e.dmg*(1-p.arm);p.hp-=Math.max(1,dmg);
+        if(p.reflect){e.hp-=dmg*p.reflect}p.inv=p.invBonus||.5;
+        spawnDN(p.x,p.y-e.sz,Math.ceil(Math.max(1,dmg)),'#e74c3c');spawnP(p.x,p.y,'#e74c3c',5);
+        if(p.hp<=0)playerDie()}
+      spawnP(e.x,e.y,'#0984e3',15);e.hp=0;
+    }
+    // 碰撞玩家
     if(d<p.sz+e.sz&&p.inv<=0){
       const dmg=e.dmg*(1-p.arm);p.hp-=Math.max(1,dmg);
       // 荆棘之甲反弹
       if(p.reflect){e.hp-=dmg*p.reflect;spawnDN(e.x,e.y-e.sz,Math.ceil(dmg*p.reflect),'#f39c12')}
+      // 冰霜怪冻结
+      if(e.freezes){p.slowT=3;p.slowF=.3}
       p.inv=p.invBonus||.5;
       spawnDN(p.x,p.y-e.sz,Math.ceil(Math.max(1,dmg)),'#e74c3c');spawnP(p.x,p.y,'#e74c3c',5);
       if(p.hp<=0)playerDie()}
