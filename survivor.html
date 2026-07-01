@@ -79,7 +79,7 @@ const ctx = canvas.getContext('2d');
 
 // 游戏配置
 const CONFIG = {
-  PLAYER: { radius: 12, speed: 3, maxHp: 100, baseXp: 20, xpMultiplier: 1.5 },
+  PLAYER: { radius: 12, speed: 3, maxHp: 100, baseXp: 50, xpMultiplier: 0.5 },
   ENEMY: { baseHp: 10, baseSpeed: 1, spawnRate: 60, maxSpawnRate: 15 },
   WEAPONS: {
     bullet: { name: '子弹', icon: '🔫', damage: 8, cooldown: 20, speed: 8, color: '#f39c12' },
@@ -1005,7 +1005,7 @@ function updateXpOrbs() {
       if (game.xp >= game.xpToNext) {
         game.xp -= game.xpToNext;
         game.level++;
-        game.xpToNext = Math.floor(game.xpToNext * 1.3);
+        game.xpToNext = Math.floor(game.xpToNext * 1.8);
         showUpgradeMenu();
       }
     }
