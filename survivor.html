@@ -766,14 +766,14 @@ function updateUltEffect() {
         });
       }
       // 爆炸粒子
-      for (let i = 0; i < 60; i++) {
-        const angle = (Math.PI * 2 / 60) * i + Math.random() * 0.2;
+      for (let i = 0; i < 40; i++) {
+        const angle = (6.2832 / 40) * i + Math.random() * 0.2;
         const speed = Math.random() * 8 + 4;
         ultEffect.particles.push({
           x: player.x,
           y: player.y,
-          vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed,
+          vx: fastCos(angle) * speed,
+          vy: fastSin(angle) * speed,
           life: 50 + Math.random() * 20,
           maxLife: 70,
           radius: 4 + Math.random() * 6,
@@ -783,7 +783,6 @@ function updateUltEffect() {
       addScreenShake(20);
     } else {
       // 更新蓄力粒子(向内收缩)
-      const t = ultEffect.timer / 25;
       for (let i = 0, len = ultEffect.particles.length; i < len; i++) {
         const p = ultEffect.particles[i];
         if (p.targetX !== undefined) {
@@ -814,19 +813,21 @@ function updateUltEffect() {
     }
 
     // 更新爆发粒子
+    let aliveCount = 0;
     for (let i = ultEffect.particles.length - 1; i >= 0; i--) {
       const p = ultEffect.particles[i];
-      if (p.targetX !== undefined) continue; // 跳过蓄力粒子
+      if (p.targetX !== undefined) { aliveCount++; continue; }
       p.x += p.vx * game.deltaTime;
       p.y += p.vy * game.deltaTime;
       p.vx *= 0.97;
       p.vy *= 0.97;
       p.life -= game.deltaTime;
       p.radius *= 0.98;
+      if (p.life > 0) aliveCount++;
+      else ultEffect.particles.splice(i, 1);
     }
-    ultEffect.particles = ultEffect.particles.filter(p => p.life > 0);
 
-    if (allDone && ultEffect.particles.length === 0) {
+    if (allDone && aliveCount === 0) {
       ultEffect.active = false;
     }
   }
@@ -1522,33 +1523,27 @@ function drawUltEffect() {
       ctx.shadowColor = sw.color;
       ctx.stroke();
 
-      // 内圈光晕
-      const innerGrad = ctx.createRadialGradient(player.x, player.y, sw.radius - 15, player.x, player.y, sw.radius + 15);
-      innerGrad.addColorStop(0, 'transparent');
-      innerGrad.addColorStop(0.5, sw.color);
-      innerGrad.addColorStop(1, 'transparent');
-      ctx.globalAlpha = sw.alpha * 0.15;
-      ctx.fillStyle = innerGrad;
+      // 内圈光晕 - 用粗线替代昂贵的RadialGradient
       ctx.beginPath();
-      ctx.arc(player.x, player.y, sw.radius + 15, 0, 6.2832);
-      ctx.fill();
+      ctx.arc(player.x, player.y, sw.radius, 0, 6.2832);
+      ctx.strokeStyle = sw.color;
+      ctx.globalAlpha = sw.alpha * 0.12;
+      ctx.lineWidth = 30;
+      ctx.stroke();
     }
     ctx.shadowBlur = 0;
     ctx.globalAlpha = 1;
 
-    // 爆发粒子
+    // 爆发粒子 - 批量绘制，减少shadowBlur切换
     for (let i = 0, len = ultEffect.particles.length; i < len; i++) {
       const p = ultEffect.particles[i];
       if (p.targetX !== undefined) continue;
       ctx.globalAlpha = Math.min(1, p.life / p.maxLife);
       ctx.fillStyle = p.color;
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = p.color;
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.radius, 0, 6.2832);
       ctx.fill();
     }
-    ctx.shadowBlur = 0;
     ctx.globalAlpha = 1;
 
     // 爆发瞬间全屏白闪
@@ -1563,8 +1558,6 @@ function drawUltEffect() {
       const crackAlpha = Math.max(0, 1 - (ultEffect.timer - 5) / 35) * 0.3;
       ctx.strokeStyle = `rgba(241, 196, 15, ${crackAlpha})`;
       ctx.lineWidth = 2;
-      ctx.shadowBlur = 5;
-      ctx.shadowColor = '#f1c40f';
 
       const crackLen = 50 + ultEffect.timer * 3;
       const segLen = crackLen / 5;
@@ -1575,13 +1568,12 @@ function drawUltEffect() {
         ctx.moveTo(player.x, player.y);
         let cx = player.x, cy = player.y;
         for (let j = 0; j < segments.length; j++) {
-          cx += Math.cos(segments[j]) * segLen;
-          cy += Math.sin(segments[j]) * segLen;
+          cx += fastCos(segments[j]) * segLen;
+          cy += fastSin(segments[j]) * segLen;
           ctx.lineTo(cx, cy);
         }
         ctx.stroke();
       }
-      ctx.shadowBlur = 0;
     }
   }
 }
