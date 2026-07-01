@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Limbus Company - 边狱巴士</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a0a;--panel:#141414;--border:#2a2a2a;--text:#e0e0e0;
+  --wrath:#d43828;--lust:#c0392b;--sloth:#2ecc71;--gluttony:#f39c12;
+  --pride:#3498db;--envy:#8e44ad;--melancholy:#95a5a6;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Noto Sans SC',sans-serif;user-select:none}
+canvas{position:fixed;top:0;left:0;z-index:0}
+
+/* ===== SCREENS ===== */
+.screen{position:fixed;inset:0;z-index:10;display:none;flex-direction:column;align-items:center;justify-content:center}
+.screen.active{display:flex}
+
+/* ===== TITLE SCREEN ===== */
+#title-screen{background:linear-gradient(180deg,#0a0a0a 0%,#1a0a0a 100%)}
+.title-logo{font-family:'Orbitron',sans-serif;font-size:clamp(28px,5vw,52px);font-weight:900;letter-spacing:8px;color:#fff;text-shadow:0 0 30px rgba(212,56,40,0.5)}
+.title-sub{font-size:16px;color:#888;margin-top:10px;letter-spacing:4px}
+.title-start{margin-top:50px;padding:15px 50px;font-size:18px;font-family:'Noto Sans SC';background:transparent;border:1px solid #d43828;color:#d43828;cursor:pointer;letter-spacing:4px;transition:all .3s}
+.title-start:hover{background:#d43828;color:#fff;box-shadow:0 0 30px rgba(212,56,40,0.4)}
+
+/* ===== LEVEL SELECT ===== */
+#level-screen{background:var(--bg);flex-direction:column;padding:20px}
+.level-title{font-family:'Orbitron';font-size:24px;letter-spacing:6px;margin-bottom:30px;color:#d43828}
+.level-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;max-width:600px}
+.level-btn{width:130px;height:80px;background:var(--panel);border:1px solid var(--border);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .3s;gap:5px}
+.level-btn:hover{border-color:#d43828;box-shadow:0 0 15px rgba(212,56,40,0.3);transform:translateY(-3px)}
+.level-btn.boss{border-color:#8e44ad}
+.level-btn.boss:hover{border-color:#8e44ad;box-shadow:0 0 15px rgba(142,68,173,0.3)}
+.level-btn.locked{opacity:0.3;pointer-events:none}
+.level-btn .lv-num{font-family:'Orbitron';font-size:24px;font-weight:700;color:#d43828}
+.level-btn .lv-name{font-size:11px;color:#888}
+.level-btn.boss .lv-num{color:#8e44ad}
+
+/* ===== BATTLE SCREEN ===== */
+#battle-screen{background:var(--bg);flex-direction:column;justify-content:flex-start}
+
+/* Top Bar */
+.battle-top{width:100%;padding:8px 15px;display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,0.8);z-index:20;border-bottom:1px solid var(--border);min-height:40px}
+.battle-top .turn-info{font-size:13px;color:#888}
+.battle-top .turn-info span{color:#d43828;font-weight:700}
+.battle-top .btn{padding:4px 12px;font-size:11px;background:transparent;border:1px solid var(--border);color:#888;cursor:pointer;transition:all .2s;font-family:'Noto Sans SC'}
+.battle-top .btn:hover{border-color:#d43828;color:#d43828}
+
+/* Enemy Area */
+.enemy-area{width:100%;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:15px;padding:10px;position:relative;z-index:15}
+.enemy-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px 18px;min-width:200px;text-align:center;transition:all .3s}
+.enemy-card.targeted{border-color:#d43828;box-shadow:0 0 20px rgba(212,56,40,0.4)}
+.enemy-card .e-name{font-size:14px;font-weight:700;margin-bottom:6px}
+.enemy-card .e-hp-bar{width:100%;height:8px;background:#222;border-radius:4px;overflow:hidden;margin:4px 0}
+.enemy-card .e-hp-fill{height:100%;background:linear-gradient(90deg,#d43828,#ff6b6b);transition:width .5s;border-radius:4px}
+.enemy-card .e-hp-text{font-size:11px;color:#888}
+.enemy-card .e-stagger-bar{width:100%;height:5px;background:#222;border-radius:3px;overflow:hidden;margin:3px 0}
+.enemy-card .e-stagger-fill{height:100%;background:linear-gradient(90deg,#f39c12,#ffd93d);transition:width .5s;border-radius:3px}
+.enemy-card .e-stagger-text{font-size:10px;color:#f39c12}
+.enemy-card .e-resist{display:flex;gap:3px;justify-content:center;margin-top:5px}
+.enemy-card .e-resist span{width:14px;height:14px;border-radius:50%;font-size:8px;display:flex;align-items:center;justify-content:center;font-weight:700}
+.enemy-card .e-skill-preview{display:flex;gap:4px;justify-content:center;margin-top:6px}
+.enemy-card .e-skill-preview .es{width:32px;height:32px;border-radius:6px;border:1px solid #333;display:flex;align-items:center;justify-content:center;font-size:14px;background:#1a1a1a}
+
+/* Clash Display */
+.clash-display{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:100;display:none;text-align:center}
+.clash-display.active{display:block}
+.clash-box{background:rgba(0,0,0,0.95);border:2px solid #d43828;border-radius:15px;padding:25px 40px;min-width:350px}
+.clash-title{font-family:'Orbitron';font-size:18px;color:#d43828;letter-spacing:4px;margin-bottom:15px}
+.clash-sides{display:flex;justify-content:space-around;align-items:center;gap:20px}
+.clash-side{text-align:center}
+.clash-side .cs-name{font-size:12px;color:#888;margin-bottom:5px}
+.clash-side .cs-power{font-size:36px;font-weight:900;color:#fff}
+.clash-side .cs-coins{display:flex;gap:5px;justify-content:center;margin-top:5px}
+.clash-coin{width:28px;height:28px;border-radius:50%;border:2px solid #555;display:flex;align-items:center;justify-content:center;font-size:14px;background:#1a1a1a;transition:all .5s}
+.clash-coin.heads{border-color:#ffd93d;background:rgba(255,217,61,0.2);color:#ffd93d}
+.clash-coin.tails{border-color:#666;background:#222;color:#666}
+.clash-vs{font-size:28px;font-weight:900;color:#d43828}
+.clash-result{margin-top:15px;font-size:16px;font-weight:700;min-height:24px}
+.clash-result.win{color:#2ecc71}
+.clash-result.lose{color:#d43828}
+.clash-result.draw{color:#f39c12}
+
+/* Dashboard */
+.dashboard{width:100%;background:rgba(10,10,10,0.95);border-top:1px solid var(--border);padding:10px 15px 15px;z-index:20}
+.dash-sinners{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.sinner-slot{width:170px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:8px;transition:all .3s;cursor:pointer;position:relative}
+.sinner-slot.confused{opacity:0.5;pointer-events:none}
+.sinner-slot.selected{border-color:#d43828;box-shadow:0 0 15px rgba(212,56,40,0.3)}
+.sinner-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.sinner-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;border:2px solid var(--border)}
+.sinner-info{flex:1}
+.sinner-info .si-name{font-size:12px;font-weight:700}
+.sinner-info .si-hp{font-size:10px;color:#888}
+.sinner-info .si-sp{font-size:10px}
+.sinner-info .si-sp.positive{color:#2ecc71}
+.sinner-info .si-sp.negative{color:#d43828}
+.sinner-skills{display:flex;flex-wrap:wrap;gap:4px}
+.skill-chip{padding:4px 8px;border-radius:4px;font-size:11px;border:1px solid #333;background:#1a1a1a;cursor:grab;transition:all .2s;white-space:nowrap;position:relative}
+.skill-chip:hover{transform:scale(1.05)}
+.skill-chip.attacking{border-color:currentColor;opacity:0.8}
+.skill-chip.defending{border-color:#3498db;background:rgba(52,152,219,0.1)}
+.skill-chip.selected{border-color:#fff;background:rgba(255,255,255,0.1);box-shadow:0 0 10px rgba(255,255,255,0.3)}
+.skill-chip .sc-cost{font-size:9px;color:#888;position:absolute;top:-6px;right:-4px;background:#0a0a0a;padding:0 3px;border-radius:3px}
+
+/* Sin Colors */
+.sin-wrath{color:var(--wrath);border-color:rgba(212,56,40,0.4)!important}
+.sin-lust{color:var(--lust);border-color:rgba(192,57,43,0.4)!important}
+.sin-sloth{color:var(--sloth);border-color:rgba(46,204,113,0.4)!important}
+.sin-gluttony{color:var(--gluttony);border-color:rgba(243,156,18,0.4)!important}
+.sin-pride{color:var(--pride);border-color:rgba(52,152,219,0.4)!important}
+.sin-envy{color:var(--envy);border-color:rgba(142,68,173,0.4)!important}
+.sin-melancholy{color:var(--melancholy);border-color:rgba(149,165,166,0.4)!important}
+
+/* EGO Button */
+.ego-btn{position:fixed;bottom:200px;right:20px;z-index:30;padding:10px 18px;background:linear-gradient(135deg,#8e44ad,#d43828);border:1px solid #8e44ad;color:#fff;font-size:12px;font-family:'Noto Sans SC';border-radius:8px;cursor:pointer;letter-spacing:2px;transition:all .3s;display:none}
+.ego-btn.visible{display:block}
+.ego-btn:hover{box-shadow:0 0 25px rgba(142,68,173,0.5);transform:scale(1.05)}
+
+/* Fragments */
+.fragments-display{position:fixed;bottom:190px;right:20px;z-index:30;display:flex;gap:5px}
+.fragment{width:12px;height:12px;border-radius:50%;border:1px solid #8e44ad;background:rgba(142,68,173,0.2)}
+.fragment.filled{background:linear-gradient(135deg,#8e44ad,#d43828);border-color:#fff}
+
+/* Execute Button */
+.execute-btn{position:fixed;bottom:155px;right:20px;z-index:30;padding:12px 30px;background:linear-gradient(135deg,#d43828,#ff6b6b);border:1px solid #d43828;color:#fff;font-size:16px;font-family:'Noto Sans SC';border-radius:10px;cursor:pointer;letter-spacing:3px;transition:all .3s;display:none}
+.execute-btn.visible{display:block}
+.execute-btn:hover{box-shadow:0 0 30px rgba(212,56,40,0.5);transform:scale(1.05)}
+
+/* Connection Line SVG */
+#connection-svg{position:fixed;inset:0;z-index:25;pointer-events:none}
+#connection-svg line{stroke:#d43828;stroke-width:3;stroke-linecap:round;filter:drop-shadow(0 0 5px rgba(212,56,40,0.6))}
+
+/* Result overlay */
+.result-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.9);display:none;flex-direction:column;align-items:center;justify-content:center}
+.result-overlay.active{display:flex}
+.result-text{font-family:'Orbitron';font-size:48px;font-weight:900;letter-spacing:8px;margin-bottom:20px}
+.result-text.win{color:#2ecc71}
+.result-text.lose{color:#d43828}
+.result-sub{font-size:16px;color:#888;margin-bottom:30px}
+.result-btn{padding:12px 40px;font-size:16px;background:transparent;border:1px solid #d43828;color:#d43828;cursor:pointer;letter-spacing:3px;font-family:'Noto Sans SC';transition:all .3s}
+.result-btn:hover{background:#d43828;color:#fff}
+
+/* Damage numbers */
+.dmg-number{position:fixed;z-index:50;font-weight:900;font-size:20px;pointer-events:none;animation:dmg-float 1.5s ease-out forwards}
+.dmg-number.heal{color:#2ecc71}
+.dmg-number.damage{color:#d43828}
+.dmg-number.info{color:#f39c12}
+@keyframes dmg-float{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-60px)}}
+
+/* Stagger effect */
+.stagger-flash{position:fixed;inset:0;z-index:40;pointer-events:none;animation:stagger-blink .6s ease}
+@keyframes stagger-blink{0%,100%{background:transparent}25%{background:rgba(243,156,18,0.3)}50%{background:transparent}75%{background:rgba(243,156,18,0.2)}}
+
+/* Corrosion effect */
+.corrosion-flash{position:fixed;inset:0;z-index:40;pointer-events:none;animation:corrosion-blink 1s ease}
+@keyframes corrosion-blink{0%,100%{background:transparent}50%{background:rgba(142,68,173,0.2)}}
+
+/* Responsive */
+@media(max-width:768px){
+  .sinner-slot{width:140px}
+  .skill-chip{font-size:10px;padding:3px 6px}
+  .level-grid{grid-template-columns:repeat(3,1fr)}
+  .enemy-card{min-width:150px;padding:8px 12px}
+}
+</style>
+</head>
+<body>
+
+<!-- Particle Background -->
+<canvas id="bg-canvas"></canvas>
+
+<!-- Connection Lines SVG -->
+<svg id="connection-svg"></svg>
+
+<!-- ===== TITLE SCREEN ===== -->
+<div id="title-screen" class="screen active">
+  <div class="title-logo">LIMBUS<br>COMPANY</div>
+  <div class="title-sub">边 狱 巴 士</div>
+  <button class="title-start" onclick="showLevelSelect()">踏 上 旅 途</button>
+</div>
+
+<!-- ===== LEVEL SELECT ===== -->
+<div id="level-screen" class="screen">
+  <div class="level-title">选 择 关 卡</div>
+  <div class="level-grid" id="level-grid"></div>
+  <button class="title-start" style="margin-top:30px" onclick="showTitle()">返 回</button>
+</div>
+
+<!-- ===== BATTLE SCREEN ===== -->
+<div id="battle-screen" class="screen">
+  <div class="battle-top">
+    <div class="turn-info">回合 <span id="turn-num">1</span> | 关卡 <span id="battle-level">1</span></div>
+    <button class="btn" onclick="showTitle()">退出</button>
+  </div>
+  <div class="enemy-area" id="enemy-area"></div>
+  <div class="dashboard" id="dashboard"></div>
+</div>
+
+<!-- EGO Button -->
+<button class="ego-btn" id="ego-btn" onclick="useEGO()">E.G.O 解放</button>
+<div class="fragments-display" id="fragments"></div>
+
+<!-- Execute Button -->
+<button class="execute-btn" id="execute-btn" onclick="executeBattle()">执 行</button>
+
+<!-- Clash Display -->
+<div class="clash-display" id="clash-display">
+  <div class="clash-box">
+    <div class="clash-title">CLASH</div>
+    <div class="clash-sides" id="clash-sides"></div>
+    <div class="clash-result" id="clash-result"></div>
+  </div>
+</div>
+
+<!-- Result Overlay -->
+<div class="result-overlay" id="result-overlay">
+  <div class="result-text" id="result-text"></div>
+  <div class="result-sub" id="result-sub"></div>
+  <button class="result-btn" id="result-btn" onclick="handleResult()">继续</button>
+</div>
+
+<script>
+// ============================================================
+//  GAME DATA - Sinners, Skills, Enemies, Levels
+// ============================================================
+
+const SIN_NAMES = ['Wrath','Lust','Sloth','Gluttony','Pride','Envy','Melancholy'];
+const SIN_ICONS = ['','❤️','🍀','🍽️','👑','💎','💧'];
+const SIN_COLORS = ['#d43828','#c0392b','#2ecc71','#f39c12','#3498db','#8e44ad','#95a5a6'];
+
+// 5 Sinners (fixed)
+const SINNERS = [
+  { id:0, name:'默尔索', icon:'🗡️', color:'#d43828', speed:5, hp:80, maxHp:80, sp:40, sinType:'Wrath',
+    skills:[
+      {name:'斩断',cost:1,type:'attack',power:6,coins:2,coinPower:4,sin:'Wrath'},
+      {name:'处决',cost:2,type:'attack',power:8,coins:3,coinPower:5,sin:'Wrath'},
+      {name:'毁灭斩',cost:3,type:'attack',power:12,coins:4,coinPower:6,sin:'Wrath'},
+      {name:'铁壁',cost:1,type:'defend',subtype:'block',power:8,sin:'Wrath'}
+    ]
+  },
+  { id:1, name:'浮士德', icon:'📖', color:'#f39c12', speed:4, hp:70, maxHp:70, sp:35, sinType:'Gluttony',
+    skills:[
+      {name:'吞噬',cost:1,type:'attack',power:5,coins:2,coinPower:4,sin:'Gluttony'},
+      {name:'暴食',cost:2,type:'attack',power:9,coins:3,coinPower:4,sin:'Gluttony'},
+      {name:'饥荒',cost:3,type:'attack',power:14,coins:3,coinPower:7,sin:'Gluttony'},
+      {name:'回避',cost:1,type:'defend',subtype:'dodge',power:0,sin:'Gluttony'}
+    ]
+  },
+  { id:2, name:'堂吉德', icon:'⚔️', color:'#3498db', speed:6, hp:65, maxHp:65, sp:30, sinType:'Pride',
+    skills:[
+      {name:'冲锋',cost:1,type:'attack',power:7,coins:1,coinPower:8,sin:'Pride'},
+      {name:'骑士之枪',cost:2,type:'attack',power:10,coins:2,coinPower:6,sin:'Pride'},
+      {name:'英雄冲锋',cost:3,type:'attack',power:15,coins:4,coinPower:5,sin:'Pride'},
+      {name:'反击',cost:1,type:'defend',subtype:'counter',power:6,sin:'Pride'}
+    ]
+  },
+  { id:3, name:'辛克莱', icon:'🛡️', color:'#8e44ad', speed:3, hp:90, maxHp:90, sp:45, sinType:'Envy',
+    skills:[
+      {name:'重击',cost:1,type:'attack',power:5,coins:2,coinPower:3,sin:'Envy'},
+      {name:'暗影斩',cost:2,type:'attack',power:8,coins:3,coinPower:4,sin:'Envy'},
+      {name:'深渊',cost:3,type:'attack',power:11,coins:5,coinPower:4,sin:'Envy'},
+      {name:'格挡',cost:1,type:'defend',subtype:'block',power:10,sin:'Envy'}
+    ]
+  },
+  { id:4, name:'鸿璐', icon:'🎭', color:'#2ecc71', speed:4, hp:60, maxHp:60, sp:25, sinType:'Sloth',
+    skills:[
+      {name:'鞭打',cost:1,type:'attack',power:6,coins:2,coinPower:3,sin:'Sloth'},
+      {name:'折磨',cost:2,type:'attack',power:7,coins:3,coinPower:4,sin:'Sloth'},
+      {name:'痛苦盛宴',cost:3,type:'attack',power:10,coins:4,coinPower:5,sin:'Sloth'},
+      {name:'闪避',cost:1,type:'defend',subtype:'dodge',power:0,sin:'Sloth'}
+    ]
+  }
+];
+
+// Enemies
+const ENEMIES = {
+  1:[
+    {name:'爪牙',hp:40,maxHp:40,stagger:20,maxStagger:20,speed:3,
+     skills:[{name:'撕咬',power:5,coins:1,coinPower:4,type:'斩'}],
+     resist:{Wrath:1,Lust:1,Sloth:1,Gluttony:1,Pride:1,Envy:1,Melancholy:1}},
+    {name:'爪牙',hp:35,maxHp:35,stagger:18,maxStagger:18,speed:3,
+     skills:[{name:'撕咬',power:5,coins:1,coinPower:4,type:'斩'}],
+     resist:{Wrath:1,Lust:1,Sloth:1,Gluttony:1,Pride:1,Envy:1,Melancholy:1}}
+  ],
+  2:[
+    {name:'暴食者',hp:60,maxHp:60,stagger:25,maxStagger:25,speed:2,
+     skills:[{name:'吞噬',power:7,coins:2,coinPower:4,type:'突'}],
+     resist:{Wrath:1,Lust:1,Sloth:0,Gluttony:2,Pride:1,Envy:1,Melancholy:0}},
+    {name:'爪牙',hp:35,maxHp:35,stagger:18,maxStagger:18,speed:4,
+     skills:[{name:'撕咬',power:5,coins:1,coinPower:4,type:'斩'}],
+     resist:{Wrath:1,Lust:1,Sloth:1,Gluttony:1,Pride:1,Envy:1,Melancholy:1}}
+  ],
+  3:[
+    {name:'暴怒骑士',hp:80,maxHp:80,stagger:30,maxStagger:30,speed:4,
+     skills:[{name:'狂暴斩',power:8,coins:2,coinPower:5,type:'斩'},{name:'怒吼',power:6,coins:3,coinPower:3,type:'打'}],
+     resist:{Wrath:2,Lust:1,Sloth:0,Gluttony:1,Pride:1,Envy:0,Melancholy:1}},
+    {name:'爪牙',hp:40,maxHp:40,stagger:20,maxStagger:20,speed:3,
+     skills:[{name:'撕咬',power:5,coins:1,coinPower:4,type:'斩'}],
+     resist:{Wrath:1,Lust:1,Sloth:1,Gluttony:1,Pride:1,Envy:1,Melancholy:1}}
+  ],
+  4:[{name:'🔥 异想体·绝望骑士',hp:200,maxHp:200,stagger:50,maxStagger:50,speed:5,
+      skills:[{name:'绝望斩击',power:12,coins:3,coinPower:6,type:'斩'},{name:'绝望咆哮',power:8,coins:4,coinPower:4,type:'打'}],
+      resist:{Wrath:1,Lust:2,Sloth:1,Gluttony:0,Pride:1,Envy:0,Melancholy:2},boss:true}]
+};
+
+// Levels
+const LEVELS = [
+  {id:1,name:'废土废墟',enemies:1,boss:false},
+  {id:2,name:'饥饿荒原',enemies:2,boss:false},
+  {id:3,name:'暴怒之城',enemies:3,boss:false},
+  {id:4,name:'异想体·绝望骑士',enemies:4,boss:true}
+];
+
+// ============================================================
+//  GAME STATE
+// ============================================================
+
+let G = {
+  currentLevel: null,
+  turn: 1,
+  sinners: [],
+  enemies: [],
+  selectedSkills: [], // {sinnerId, skillIdx, skill}
+  selectedSinner: null,
+  fragments: 0,
+  maxFragments: 6,
+  phase: 'dashboard', // dashboard | clashing | resolving | ended
+  clashQueue: [],
+  currentClash: null,
+  egoMode: false,
+  autoMode: false,
+  unlockedLevels: 1
+};
+
+// ============================================================
+//  BACKGROUND PARTICLES
+// ============================================================
+
+const canvas = document.getElementById('bg-canvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+for(let i=0;i<80;i++){
+  particles.push({
+    x:Math.random()*canvas.width, y:Math.random()*canvas.height,
+    vx:(Math.random()-0.5)*0.5, vy:(Math.random()-0.5)*0.5,
+    size:Math.random()*2+0.5, color:`hsl(${Math.random()*60+340},70%,50%)`, alpha:Math.random()*0.3+0.1
+  });
+}
+
+function drawParticles(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  particles.forEach(p=>{
+    p.x+=p.vx; p.y+=p.vy;
+    if(p.x<0)p.x=canvas.width; if(p.x>canvas.width)p.x=0;
+    if(p.y<0)p.y=canvas.height; if(p.y>canvas.height)p.y=0;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+    ctx.fillStyle=p.color;
+    ctx.globalAlpha=p.alpha;
+    ctx.fill();
+  });
+  ctx.globalAlpha=1;
+  requestAnimationFrame(drawParticles);
+}
+drawParticles();
+
+// ============================================================
+//  SCREEN MANAGEMENT
+// ============================================================
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showTitle(){
+  document.getElementById('ego-btn').classList.remove('visible');
+  document.getElementById('execute-btn').classList.remove('visible');
+  document.getElementById('fragments').style.display='none';
+  document.getElementById('clash-display').classList.remove('active');
+  document.getElementById('result-overlay').classList.remove('active');
+  showScreen('title-screen');
+}
+
+function showLevelSelect(){
+  const grid = document.getElementById('level-grid');
+  grid.innerHTML = '';
+  LEVELS.forEach(lv=>{
+    const btn = document.createElement('div');
+    btn.className = 'level-btn' + (lv.boss?' boss':'') + (lv.id>G.unlockedLevels?' locked':'');
+    btn.innerHTML = `<div class="lv-num">${lv.boss?'★':'#'+lv.id}</div><div class="lv-name">${lv.name}</div>`;
+    if(lv.id<=G.unlockedLevels) btn.onclick=()=>startBattle(lv.id);
+    grid.appendChild(btn);
+  });
+  showScreen('level-screen');
+}
+
+// ============================================================
+//  BATTLE INITIALIZATION
+// ============================================================
+
+function startBattle(levelId){
+  const lv = LEVELS.find(l=>l.id===levelId);
+  if(!lv) return;
+  G.currentLevel = lv;
+  G.turn = 1;
+  G.fragments = 0;
+  G.egoMode = false;
+  G.autoMode = !lv.boss;
+  G.selectedSkills = [];
+  G.selectedSinner = null;
+  G.phase = 'dashboard';
+
+  // Clone sinners
+  G.sinners = SINNERS.map(s=>({...s, hp:s.maxHp, sp:s.sp, confused:false, skills:s.skills.map(sk=>({...sk}))}));
+
+  // Clone enemies
+  const edata = ENEMIES[levelId];
+  G.enemies = edata.map(e=>({...e, hp:e.maxHp, stagger:0, confused:false, currentSkillIdx:0}));
+
+  document.getElementById('battle-level').textContent = levelId;
+  showScreen('battle-screen');
+  renderBattle();
+}
+
+// ============================================================
+//  RENDER BATTLE
+// ============================================================
+
+function renderBattle(){
+  renderEnemies();
+  renderDashboard();
+  document.getElementById('turn-num').textContent = G.turn;
+
+  // Show/hide buttons
+  const egoBtn = document.getElementById('ego-btn');
+  const execBtn = document.getElementById('execute-btn');
+  const frags = document.getElementById('fragments');
+
+  if(G.selectedSkills.length > 0){
+    execBtn.classList.add('visible');
+  } else {
+    execBtn.classList.remove('visible');
+  }
+
+  // EGO
+  if(G.sinners.some(s=>s.sp>=30) && G.fragments>=G.maxFragments){
+    egoBtn.classList.add('visible');
+  } else {
+    egoBtn.classList.remove('visible');
+  }
+
+  // Fragments
+  frags.style.display='flex';
+  frags.innerHTML='';
+  for(let i=0;i<G.maxFragments;i++){
+    const f=document.createElement('div');
+    f.className='fragment'+(i<G.fragments?' filled':'');
+    frags.appendChild(f);
+  }
+
+  // Auto-execute if auto mode
+  if(G.autoMode && G.selectedSkills.length===0){
+    setTimeout(()=>autoSelect(), 300);
+  }
+}
+
+function renderEnemies(){
+  const area = document.getElementById('enemy-area');
+  area.innerHTML='';
+  G.enemies.forEach((e,i)=>{
+    const card = document.createElement('div');
+    card.className = 'enemy-card' + (e.confused?' targeted':'');
+    card.id = 'enemy-'+i;
+    const hpPct = Math.max(0,e.hp/e.maxHp*100);
+    const stagPct = Math.min(100,e.stagger/e.maxStagger*100);
+    const resistHTML = Object.keys(e.resist).map(r=>{
+      const val = e.resist[r];
+      const color = SIN_COLORS[SIN_NAMES.indexOf(r)];
+      return `<span style="background:${color}${val===2?'cc':val===0?'44':'88'};color:#fff" title="${r}×${val}">${val}</span>`;
+    }).join('');
+    const skillPreview = e.skills.map(s=>`<div class="es" title="${s.name} P${s.power}">${getAttackIcon(s.type)}</div>`).join('');
+    card.innerHTML=`
+      <div class="e-name">${e.name}</div>
+      <div class="e-hp-bar"><div class="e-hp-fill" style="width:${hpPct}%"></div></div>
+      <div class="e-hp-text">HP: ${Math.max(0,e.hp)}/${e.maxHp}</div>
+      <div class="e-stagger-bar"><div class="e-stagger-fill" style="width:${stagPct}%"></div></div>
+      <div class="e-stagger-text">混乱: ${e.stagger}/${e.maxStagger}</div>
+      <div class="e-resist">${resistHTML}</div>
+      <div class="e-skill-preview">${skillPreview}</div>
+    `;
+    area.appendChild(card);
+  });
+}
+
+function renderDashboard(){
+  const dash = document.getElementById('dashboard');
+  dash.innerHTML = '<div class="dash-sinners" id="dash-sinners"></div>';
+  const container = document.getElementById('dash-sinners');
+
+  // Sort sinners by speed, confused last
+  const sorted = [...G.sinners].sort((a,b)=>{
+    if(a.confused && !b.confused) return 1;
+    if(!a.confused && b.confused) return -1;
+    return b.speed - a.speed;
+  });
+
+  sorted.forEach(s=>{
+    const slot = document.createElement('div');
+    slot.className = 'sinner-slot' + (s.confused?' confused':'') + (G.selectedSinner===s.id?' selected':'');
+    slot.dataset.sid = s.id;
+
+    const hpPct = Math.max(0,s.hp/s.maxHp*100);
+    const spColor = s.sp>=0?'positive':'negative';
+
+    // Randomly pick 3 attack skills + 1 defend
+    const atkSkills = s.skills.filter(sk=>sk.type==='attack');
+    const defSkill = s.skills.find(sk=>sk.type==='defend');
+    const displaySkills = shuffleArray([...atkSkills]).slice(0,3);
+    if(defSkill) displaySkills.push(defSkill);
+
+    const skillsHTML = displaySkills.map((sk,si)=>{
+      const sinClass = `sin-${sk.sin.toLowerCase()}`;
+      const typeClass = sk.type==='attack'?'attacking':'defending';
+      const isSelected = G.selectedSkills.some(sel=>sel.sinnerId===s.id && sel.skillIdx===si);
+      return `<div class="skill-chip ${sinClass} ${typeClass} ${isSelected?'selected':''}" 
+                    data-sid="${s.id}" data-si="${si}" data-sname="${sk.name}" data-scost="${sk.cost}" 
+                    data-spower="${sk.power||0}" data-ccoins="${sk.coins||0}" data-ccp="${sk.coinPower||0}"
+                    data-sin="${sk.sin}" data-stype="${sk.type}" data-ssub="${sk.subtype||''}"
+                    onclick="toggleSkill(this)" 
+                    onmousedown="startDrag(event,this)" ondragstart="return false">
+                ${sk.name}<span class="sc-cost">${sk.cost}</span>
+              </div>`;
+    }).join('');
+
+    slot.innerHTML=`
+      <div class="sinner-header">
+        <div class="sinner-avatar" style="background:${s.color}22;border-color:${s.color}">${s.icon}</div>
+        <div class="sinner-info">
+          <div class="si-name">${s.name}</div>
+          <div class="si-hp">HP: ${Math.max(0,s.hp)}/${s.maxHp}</div>
+          <div class="si-sp ${spColor}">SP: ${s.sp}</div>
+        </div>
+      </div>
+      <div class="sinner-skills">${skillsHTML}</div>
+    `;
+
+    if(!s.confused){
+      slot.onclick = (e)=>{
+        if(e.target.classList.contains('skill-chip')) return;
+        G.selectedSinner = s.id;
+        renderBattle();
+      };
+    }
+    container.appendChild(slot);
+  });
+}
+
+function getAttackIcon(type){
+  return type==='斩'?'️':type==='突'?'🔱':'👊';
+}
+
+// ============================================================
+//  SKILL SELECTION & DRAG CONNECT
+// ============================================================
+
+let dragStart = null;
+let dragLine = null;
+
+function toggleSkill(el){
+  const sid = parseInt(el.dataset.sid);
+  const si = parseInt(el.dataset.si);
+  const existing = G.selectedSkills.findIndex(s=>s.sinnerId===sid && s.skillIdx===si);
+  if(existing>=0){
+    G.selectedSkills.splice(existing,1);
+  } else {
+    // Remove previous selection for this sinner
+    G.selectedSkills = G.selectedSkills.filter(s=>s.sinnerId!==sid);
+    G.selectedSkills.push({
+      sinnerId: sid, skillIdx: si,
+      name: el.dataset.sname, cost: parseInt(el.dataset.scost),
+      power: parseInt(el.dataset.spower), coins: parseInt(el.dataset.ccoins),
+      coinPower: parseInt(el.dataset.ccp), sin: el.dataset.sin,
+      type: el.dataset.stype, subtype: el.dataset.ssub
+    });
+  }
+  renderBattle();
+}
+
+function startDrag(e,el){
+  e.preventDefault();
+  const sid = parseInt(el.dataset.sid);
+  G.selectedSinner = sid;
+  G.selectedSkills = G.selectedSkills.filter(s=>s.sinnerId!==sid);
+  G.selectedSkills.push({
+    sinnerId: sid, skillIdx: parseInt(el.dataset.si),
+    name: el.dataset.sname, cost: parseInt(el.dataset.scost),
+    power: parseInt(el.dataset.spower), coins: parseInt(el.dataset.ccoins),
+    coinPower: parseInt(el.dataset.ccp), sin: el.dataset.sin,
+    type: el.dataset.stype, subtype: el.dataset.ssub
+  });
+  renderBattle();
+}
+
+// ============================================================
+//  AUTO SELECT (for normal battles)
+// ============================================================
+
+function autoSelect(){
+  if(G.phase!=='dashboard') return;
+  G.selectedSkills = [];
+  G.sinners.forEach(s=>{
+    if(s.confused || s.hp<=0) return;
+    const atkSkills = s.skills.filter(sk=>sk.type==='attack');
+    if(atkSkills.length===0) return;
+    // Pick strongest affordable skill
+    const best = atkSkills.reduce((a,b)=>a.power>b.power?a:b);
+    const si = s.skills.indexOf(best);
+    G.selectedSkills.push({
+      sinnerId: s.id, skillIdx: si,
+      name: best.name, cost: best.cost,
+      power: best.power, coins: best.coins,
+      coinPower: best.coinPower, sin: best.sin,
+      type: best.type, subtype: best.subtype
+    });
+  });
+  renderBattle();
+  setTimeout(()=>executeBattle(), 500);
+}
+
+// ============================================================
+//  EGO
+// ============================================================
+
+function useEGO(){
+  if(G.fragments<G.maxFragments) return;
+  G.egoMode = true;
+  G.fragments = 0;
+
+  // Pick sinner with highest SP
+  const sinner = [...G.sinners].filter(s=>s.hp>0&&!s.confused).sort((a,b)=>b.sp-a.sp)[0];
+  if(!sinner) return;
+
+  // EGO skill: massive damage
+  G.selectedSkills = [{
+    sinnerId: sinner.id, skillIdx: -1,
+    name: `E.G.O·${sinner.name}`, cost: 0,
+    power: 20, coins: 5, coinPower: 8, sin: sinner.sinType,
+    type: 'ego', subtype: ''
+  }];
+
+  renderBattle();
+  setTimeout(()=>executeBattle(), 800);
+}
+
+// ============================================================
+//  EXECUTE BATTLE
+// ============================================================
+
+async function executeBattle(){
+  if(G.selectedSkills.length===0 || G.phase!=='dashboard') return;
+  G.phase = 'clashing';
+  document.getElementById('execute-btn').classList.remove('visible');
+
+  // Build clash queue: pair each sinner skill with an enemy
+  const availableEnemies = G.enemies.filter(e=>e.hp>0);
+  if(availableEnemies.length===0){
+    battleVictory(); return;
+  }
+
+  G.clashQueue = [];
+  G.selectedSkills.forEach(sel=>{
+    const enemy = availableEnemies[Math.floor(Math.random()*availableEnemies.length)];
+    const enemySkill = enemy.skills[Math.floor(Math.random()*enemy.skills.length)];
+    G.clashQueue.push({
+      sinner: G.sinners[sel.sinnerId],
+      sinnerSkill: {...sel, skill: sel},
+      enemy: enemy,
+      enemySkill: enemySkill
+    });
+  });
+
+  // Process clashes sequentially
+  for(let i=0;i<G.clashQueue.length;i++){
+    const clash = G.clashQueue[i];
+    await processClash(clash, i);
+    await delay(800);
+  }
+
+  // Check results
+  const aliveEnemies = G.enemies.filter(e=>e.hp>0);
+  const aliveSinners = G.sinners.filter(s=>s.hp>0);
+
+  if(aliveEnemies.length===0){
+    battleVictory();
+    return;
+  }
+
+  if(aliveSinners.length===0){
+    battleDefeat();
+    return;
+  }
+
+  // Enemy attacks for unclashed enemies
+  await enemyPhase();
+
+  // End of turn
+  endOfTurn();
+}
+
+// ============================================================
+//  CLASH SYSTEM
+// ============================================================
+
+async function processClash(clash, index){
+  const sinner = clash.sinner;
+  const sSkill = clash.sinnerSkill;
+  const enemy = clash.enemy;
+  const eSkill = clash.enemySkill;
+
+  // Calculate sin bonus
+  const sinBonus = (enemy.resist[sSkill.sin]||1);
+
+  // Calculate sinner power
+  const headsProb = Math.max(0.1, Math.min(0.95, 0.5 + sinner.sp/200));
+  let sHeads = 0;
+  for(let c=0;c<sSkill.coins;c++){
+    if(Math.random()<headsProb) sHeads++;
+  }
+  const sPower = sSkill.power + sHeads * sSkill.coinPower;
+
+  // Enemy power
+  let eHeads = 0;
+  const eHeadsProb = 0.5;
+  for(let c=0;c<eSkill.coins;c++){
+    if(Math.random()<eHeadsProb) eHeads++;
+  }
+  const ePower = eSkill.power + eHeads * eSkill.coinPower;
+
+  const ePowerMod = ePower * sinBonus;
+
+  // Show clash
+  await showClash(sinner, sSkill, sPower, sHeads, enemy, eSkill, ePowerMod, eHeads, sinBonus);
+
+  // Determine result
+  if(sPower > ePowerMod){
+    // Win
+    const dmg = Math.max(1, Math.floor(sPower * 0.8));
+    enemy.hp -= dmg;
+    enemy.stagger += Math.floor(sPower * 0.3);
+    sinner.sp += 3;
+    G.fragments = Math.min(G.maxFragments, G.fragments + 1);
+    showDmgNumber(`-${dmg}`, enemy, 'damage');
+    if(enemy.stagger >= enemy.maxStagger){
+      enemy.confused = true;
+      showStaggerFlash();
+    }
+  } else if(sPower < ePowerMod){
+    // Lose
+    const dmg = Math.max(1, Math.floor(ePower * 0.6));
+    sinner.hp -= dmg;
+    sinner.sp -= 5;
+    showDmgNumber(`-${dmg}`, sinner, 'damage');
+    if(sinner.sp < -20 && Math.random()<0.3){
+      sinner.confused = true;
+      showCorrosionFlash();
+    }
+  } else {
+    // Draw - both take reduced damage
+    const dmg = Math.max(1, Math.floor(sPower * 0.3));
+    enemy.hp -= dmg;
+    sinner.hp -= Math.floor(dmg*0.5);
+    showDmgNumber(`-${dmg}`, enemy, 'damage');
+  }
+
+  renderBattle();
+}
+
+async function showClash(sinner, sSkill, sPower, sHeads, enemy, eSkill, ePower, eHeads, sinBonus){
+  const display = document.getElementById('clash-display');
+  const sides = document.getElementById('clash-sides');
+  const result = document.getElementById('clash-result');
+  result.textContent = '';
+  result.className = 'clash-result';
+
+  sides.innerHTML = `
+    <div class="clash-side">
+      <div class="cs-name">${sinner.name}</div>
+      <div class="cs-power" style="color:${SIN_COLORS[SIN_NAMES.indexOf(sSkill.sin)]}">${sPower}</div>
+      <div class="cs-coins">${Array.from({length:sSkill.coins},(_,i)=>`<div class="clash-coin ${i<sHeads?'heads':'tails'}">${i<sHeads?'★':''}</div>`).join('')}</div>
+    </div>
+    <div class="clash-vs">VS</div>
+    <div class="clash-side">
+      <div class="cs-name">${enemy.name}</div>
+      <div class="cs-power" style="color:#ff6b6b">${ePower}${sinBonus!==1?' ×'+sinBonus:''}</div>
+      <div class="cs-coins">${Array.from({length:eSkill.coins},(_,i)=>`<div class="clash-coin ${i<eHeads?'heads':'tails'}">${i<eHeads?'★':'✕'}</div>`).join('')}</div>
+    </div>
+  `;
+
+  display.classList.add('active');
+  await delay(1500);
+
+  if(sPower > ePower){
+    result.textContent = '✦ 拼点胜利 ✦';
+    result.className = 'clash-result win';
+  } else if(sPower < ePower){
+    result.textContent = '✦ 拼点失败 ✦';
+    result.className = 'clash-result lose';
+  } else {
+    result.textContent = '✦ 平局 ✦';
+    result.className = 'clash-result draw';
+  }
+
+  await delay(1200);
+  display.classList.remove('active');
+}
+
+// ============================================================
+//  ENEMY PHASE
+// ============================================================
+
+async function enemyPhase(){
+  for(const enemy of G.enemies){
+    if(enemy.hp<=0 || enemy.confused) continue;
+
+    // Pick random target
+    const aliveSinners = G.sinners.filter(s=>s.hp>0 && !s.confused);
+    if(aliveSinners.length===0) continue;
+    const target = aliveSinners[Math.floor(Math.random()*aliveSinners.length)];
+    const skill = enemy.skills[Math.floor(Math.random()*enemy.skills.length)];
+
+    // Simple attack (no clash)
+    const headsProb = 0.5;
+    let heads = 0;
+    for(let c=0;c<skill.coins;c++){
+      if(Math.random()<headsProb) heads++;
+    }
+    const power = skill.power + heads * skill.coinPower;
+
+    const sinBonus = (target.sinType===skill.type||1); // simplified
+    const dmg = Math.max(1, Math.floor(power * 0.7));
+
+    // Check for dodge
+    const hasDodge = target.skills.some(s=>s.type==='defend' && s.subtype==='dodge');
+    if(hasDodge && Math.random()<0.4){
+      showDmgNumber('MISS', target, 'info');
+      continue;
+    }
+
+    target.hp -= dmg;
+    target.sp -= 2;
+    showDmgNumber(`-${dmg}`, target, 'damage');
+
+    if(target.sp < -20 && Math.random()<0.2){
+      target.confused = true;
+      showCorrosionFlash();
+    }
+
+    await delay(400);
+    renderBattle();
+  }
+}
+
+// ============================================================
+//  END OF TURN
+// ============================================================
+
+function endOfTurn(){
+  G.turn++;
+  G.phase = 'dashboard';
+  G.selectedSkills = [];
+  G.selectedSinner = null;
+  G.egoMode = false;
+
+  // SP regen
+  G.sinners.forEach(s=>{
+    if(s.hp>0) s.sp = Math.min(50, s.sp + 2);
+    // Recover confused after 1 turn
+    if(s.confused && Math.random()<0.5) s.confused = false;
+  });
+  G.enemies.forEach(e=>{
+    if(e.confused && Math.random()<0.3) e.confused = false;
+  });
+
+  renderBattle();
+}
+
+// ============================================================
+//  BATTLE END
+// ============================================================
+
+function battleVictory(){
+  G.phase = 'ended';
+  G.unlockedLevels = Math.max(G.unlockedLevels, G.currentLevel.id + 1);
+  const overlay = document.getElementById('result-overlay');
+  document.getElementById('result-text').textContent = 'VICTORY';
+  document.getElementById('result-text').className = 'result-text win';
+  document.getElementById('result-sub').textContent = `关卡 ${G.currentLevel.id} 清除！`;
+  document.getElementById('result-btn').textContent = '下一关';
+  document.getElementById('result-btn').onclick = ()=>{
+    overlay.classList.remove('active');
+    if(G.currentLevel.id < LEVELS.length){
+      startBattle(G.currentLevel.id + 1);
+    } else {
+      showLevelSelect();
+    }
+  };
+  overlay.classList.add('active');
+}
+
+function battleDefeat(){
+  G.phase = 'ended';
+  const overlay = document.getElementById('result-overlay');
+  document.getElementById('result-text').textContent = 'DEFEAT';
+  document.getElementById('result-text').className = 'result-text lose';
+  document.getElementById('result-sub').textContent = '罪人们全部倒下...';
+  document.getElementById('result-btn').textContent = '重试';
+  document.getElementById('result-btn').onclick = ()=>{
+    overlay.classList.remove('active');
+    startBattle(G.currentLevel.id);
+  };
+  overlay.classList.add('active');
+}
+
+function handleResult(){}
+
+// ============================================================
+//  VISUAL EFFECTS
+// ============================================================
+
+function showDmgNumber(text, entity, type){
+  const el = document.createElement('div');
+  el.className = `dmg-number ${type}`;
+  el.textContent = text;
+
+  if(entity.hp !== undefined){
+    // Find element position
+    const sIdx = G.sinners.indexOf(entity);
+    const eIdx = G.enemies.indexOf(entity);
+    if(sIdx>=0){
+      const slots = document.querySelectorAll('.sinner-slot');
+      const slot = [...slots].find(s=>parseInt(s.dataset.sid)===entity.id);
+      if(slot){
+        const rect = slot.getBoundingClientRect();
+        el.style.left = rect.left + rect.width/2 - 20 + 'px';
+        el.style.top = rect.top + 'px';
+      }
+    } else if(eIdx>=0){
+      const eCard = document.getElementById('enemy-'+eIdx);
+      if(eCard){
+        const rect = eCard.getBoundingClientRect();
+        el.style.left = rect.left + rect.width/2 - 20 + 'px';
+        el.style.top = rect.top + 'px';
+      }
+    }
+  }
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 1500);
+}
+
+function showStaggerFlash(){
+  const el = document.createElement('div');
+  el.className = 'stagger-flash';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 600);
+}
+
+function showCorrosionFlash(){
+  const el = document.createElement('div');
+  el.className = 'corrosion-flash';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 1000);
+}
+
+// ============================================================
+//  UTILITIES
+// ============================================================
+
+function delay(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+function shuffleArray(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr;
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+
+showTitle();
+</script>
+</body>
+</html>
